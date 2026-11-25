@@ -222,7 +222,7 @@ async function findMembers(ctx, q) {
   if (qm) { const ref = (await ctx.store.getJSON(`qr/${qm[1]}`))?.data; if (ref) return [ref.id]; }
   const old = q.match(/[?&]m=(CD\d+)/i); // cards from the first version
   if (old) return [old[1].toUpperCase()];
-  const id = q.replace(/^#/, '').match(/^cd\s*(\d{3,7})$/i) || q.match(/^(\d{4})$/);
+  const id = q.replace(/^#/, '').match(/^cd\s*-?\s*(\d{3,7})$/i) || q.match(/^(\d{4,6})$/); // member number, with or without CD
   if (id) return [`CD${id[1]}`];
   const em = normEmail(q);
   if (em) { const ref = (await ctx.store.getJSON(`emails/${sha(em)}`))?.data; return ref ? [ref.id] : []; }

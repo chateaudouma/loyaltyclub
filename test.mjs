@@ -85,6 +85,9 @@ await t('QR scan identifies the customer without exposing personal data in the c
 });
 await t('Manual lookup by name, member number and phone', async () => {
   assert.equal((await call('GET', '/staff/find?q=CD1002', null, staff)).data.member.id, 'CD1002');
+  assert.equal((await call('GET', '/staff/find?q=1002', null, staff)).data.member.id, 'CD1002', 'number without CD');
+  assert.equal((await call('GET', '/staff/find?q=' + encodeURIComponent('cd 1003'), null, staff)).data.member.id, 'CD1003');
+  assert.equal((await call('GET', '/staff/find?q=' + encodeURIComponent('+96171234567'), null, staff)).data.member.id, 'CD1001');
   assert.equal((await call('GET', '/staff/find?q=' + encodeURIComponent('70 555 444'), null, staff)).data.member.id, 'CD1003');
   assert.equal((await call('GET', '/staff/find?q=nadia', null, staff)).data.member.id, 'CD1003');
 });
@@ -300,12 +303,20 @@ await t('Individual staff accounts with their own PIN and permissions', async ()
   await call('POST', '/owner/staff', { action: 'update', id, active: false }, owner);
   assert.equal((await buy('CD1002', '10', {}, joe.token)).status, 401, 'deactivated staff is locked out');
 });
-await t('Stamp cards still work alongside cashback (5 glasses = 1 free)', async () => {
-  await buy('CD1003', '40', { glasses: 3 });
-  const r = await buy('CD1003', '30', { glasses: 2 });
-  assert.equal(r.data.member.stamps.glassRewards, 1);
-  const rr = await call('POST', '/staff/stamp-redeem', { memberId: 'CD1003', kind: 'glass' }, staff);
+await t('Every 5 visits (one per day with a purchase) earns a complimentary glass', async () => {
+  const E2 = (await join('Visit Tester', '76 444 555')).data;
+  const days = ['2026-12-10', '2026-12-11', '2026-12-12', '2026-12-13'];
+  for (const d of days) { NOW = d + 'T12:00:00.000Z'; await buy(E2.id, '20'); }
+  NOW = '2026-12-13T18:00:00.000Z'; await buy(E2.id, '20'); // same day: no extra visit
+  let m = (await me(E2)).data.member;
+  assert.equal(m.stamps.glasses, 4); assert.equal(m.stamps.glassRewards, 0);
+  NOW = '2026-12-14T12:00:00.000Z'; await buy(E2.id, '20');
+  m = (await me(E2)).data.member;
+  assert.equal(m.stamps.glasses, 0); assert.equal(m.stamps.glassRewards, 1);
+  assert.ok((await me(E2)).data.inbox.some((n) => /complimentary glass/i.test(n.title)));
+  const rr = await call('POST', '/staff/stamp-redeem', { memberId: E2.id, kind: 'glass' }, staff);
   assert.equal(rr.data.member.stamps.glassRewards, 0);
+  NOW = '2026-12-08T10:00:00.000Z';
 });
 await t('Real-time sync: the customer card reflects staff changes immediately', async () => {
   const before = (await me(C)).data.member.available;
@@ -314,8 +325,8 @@ await t('Real-time sync: the customer card reflects staff changes immediately', 
 });
 await t('Analytics and CSV exports', async () => {
   const a = (await call('GET', '/owner/analytics?from=2026-11-01T00:00:00Z&to=2027-01-01T00:00:00Z', null, owner)).data;
-  assert.equal(a.members.total, 4); assert.ok(a.sales > 0); assert.ok(a.issued > 0); assert.ok(a.redeemed > 0); assert.ok(a.costPercent > 0);
-  assert.equal(a.welcome.count, 4); assert.equal(a.birthday.count, 1);
+  assert.equal(a.members.total, 5); assert.ok(a.sales > 0); assert.ok(a.issued > 0); assert.ok(a.redeemed > 0); assert.ok(a.costPercent > 0);
+  assert.equal(a.welcome.count, 5); assert.equal(a.birthday.count, 1);
   assert.ok(a.topSpenders[0].id === 'CD1002');
   const csv = await call('GET', '/owner/export?type=transactions&from=2026-11-01T00:00:00Z&to=2027-01-01T00:00:00Z', null, owner);
   const text = new TextDecoder().decode(csv.data);

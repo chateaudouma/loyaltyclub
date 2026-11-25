@@ -33,8 +33,8 @@
   .dot{position:absolute;top:9px;right:9px;width:10px;height:10px;border-radius:50%;background:#B23A2E;border:2px solid var(--ivory)}
   /* bottom bar sits higher, leaving room underneath for the "Powered by Netlify" badge */
   nav.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(251,248,241,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 10px calc(44px + env(safe-area-inset-bottom));z-index:40}
-  nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-  nav.tabs button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;font:600 11px var(--sans);color:var(--muted2);cursor:pointer;min-height:54px}
+  nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+  nav.tabs button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;font:600 10.5px var(--sans);color:var(--muted2);cursor:pointer;min-height:54px}
   nav.tabs button.on{color:var(--green)}
   nav.tabs button.on svg{stroke:var(--green)}
   .balance-big{font-family:var(--serif);font-weight:700;font-size:54px;line-height:1;letter-spacing:-.5px}
@@ -87,6 +87,7 @@
   </div>
 
   <section id="v-home" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-qr" class="view hidden stack" style="gap:16px"></section>
   <section id="v-wallet" class="view hidden stack" style="gap:16px"></section>
   <section id="v-transactions" class="view hidden stack" style="gap:6px"></section>
   <section id="v-profile" class="view hidden stack" style="gap:16px"></section>
@@ -95,6 +96,7 @@
 
 <nav class="tabs hidden" id="tabs" aria-label="Sections"><div class="in">
   <button data-v="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button data-v="qr"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2M20 14v.01M14 20h.01M17 17h3v3h-3z"/></svg>QR Code</button>
   <button data-v="wallet"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14.5h2"/></svg>My Wallet</button>
   <button data-v="transactions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Transactions</button>
   <button data-v="profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-5 8-5s6.5 1 8 5"/></svg>Profile</button>
@@ -102,18 +104,17 @@
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
   <symbol id="g-full" viewBox="0 0 48 84">
-    <path d="M10 6 C9 22 11 34 17 40 C20 43 22 44 24 44 C26 44 28 43 31 40 C37 34 39 22 38 6 Z" fill="#FFFDF8" stroke="#B9A27A" stroke-width="1.3"/>
+    <path d="M10 6 C9 22 11 34 17 40 C20 43 22 44 24 44 C26 44 28 43 31 40 C37 34 39 22 38 6 Z" fill="#FFFDF8" stroke="currentColor" stroke-width="1.4"/>
     <path d="M10.6 20 C11 30 13 36 17 40 C20 43 22 44 24 44 C26 44 28 43 31 40 C35 36 37 30 37.4 20 Z" fill="#7E1D30"/>
     <path d="M10.6 20 Q24 23.5 37.4 20" fill="none" stroke="#A8384D" stroke-width="1.6"/>
     <path d="M14 10 C13.5 22 15 31 19 37" fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M24 44 V70" stroke="#B9A27A" stroke-width="1.6"/>
-    <ellipse cx="24" cy="74" rx="11" ry="2.6" fill="#FFFDF8" stroke="#B9A27A" stroke-width="1.3"/>
+    <path d="M24 44 V70" stroke="currentColor" stroke-width="1.6"/>
+    <ellipse cx="24" cy="74" rx="11" ry="2.6" fill="#FFFDF8" stroke="currentColor" stroke-width="1.3"/>
   </symbol>
   <symbol id="g-empty" viewBox="0 0 48 84">
-    <path d="M10 6 C9 22 11 34 17 40 C20 43 22 44 24 44 C26 44 28 43 31 40 C37 34 39 22 38 6 Z" fill="#FFFDF8" stroke="#D9CDB5" stroke-width="1.3"/>
-    <path d="M14 10 C13.5 22 15 31 19 37" fill="none" stroke="#EFE7D8" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M24 44 V70" stroke="#D9CDB5" stroke-width="1.6"/>
-    <ellipse cx="24" cy="74" rx="11" ry="2.6" fill="#FFFDF8" stroke="#D9CDB5" stroke-width="1.3"/>
+    <path d="M10 6 C9 22 11 34 17 40 C20 43 22 44 24 44 C26 44 28 43 31 40 C37 34 39 22 38 6 Z" fill="#FFFFFF" fill-opacity=".45" stroke="currentColor" stroke-opacity=".5" stroke-width="1.3"/>
+    <path d="M24 44 V70" stroke="currentColor" stroke-opacity=".5" stroke-width="1.6"/>
+    <ellipse cx="24" cy="74" rx="11" ry="2.6" fill="#FFFFFF" fill-opacity=".45" stroke="currentColor" stroke-opacity=".5" stroke-width="1.3"/>
   </symbol>
   <symbol id="b-full" viewBox="0 0 40 96">
     <path d="M16 4 H24 V26 C24 30 33 33 33 42 V88 C33 91 31 93 28 93 H12 C9 93 7 91 7 88 V42 C7 33 16 30 16 26 Z" fill="#5C1322" stroke="#3F0C17" stroke-width="1.2"/>
@@ -162,7 +163,8 @@ function card(m, { compact = false } = {}) {
       <div class="serif" style="font-size:${compact ? 36 : 48}px;line-height:1;margin-top:2px">${M(m.available)}</div>
       <div class="v" style="margin-top:4px;opacity:.9">Cashback rate ${m.rate}%</div>
     </div>
-    <div class="row between" style="margin-top:${compact ? 14 : 20}px;align-items:flex-end">
+    ${m.stamps ? visitRow(m.stamps) : ''}
+    <div class="row between" style="margin-top:${compact ? 14 : 18}px;align-items:flex-end">
       <div><div class="k">Member</div><div class="serif" style="font-size:20px">${esc(m.name)}</div></div>
       <div class="right"><div class="k">No.</div><div class="v">#${m.id}</div></div>
     </div>
@@ -209,7 +211,7 @@ function txRow(x) {
   else if (x.type === 'refund' || x.type === 'reversal') { ic = ICON.undo; if (x.refund) lines.push(`<div class="small muted">Refunded ${M(x.refund)}</div>`); if (x.restored) pos(x.restored, 'cashback returned'); if (x.earnedReversed) neg(x.earnedReversed, 'cashback reversed'); if (x.adjust) (x.adjust > 0 ? pos : neg)(Math.abs(x.adjust), 'corrected'); }
   else if (x.type === 'tier') { ic = ICON.star; title = esc(x.label); }
   else if (x.type === 'stamp') { ic = ICON.wine; }
-  if (x.stamps) lines.push(`<div class="small muted">Stamps: ${x.stamps.glasses ? '+' + x.stamps.glasses + ' glass' : ''} ${x.stamps.bottles ? '+' + x.stamps.bottles + ' bottle' : ''}</div>`);
+  if (x.stamps?.visit) lines.push(`<div class="small muted">+1 visit glass</div>`);
   const bal = x.balance !== undefined && x.type !== 'tier' ? `<div class="small muted" style="white-space:nowrap">Balance ${M(x.balance)}</div>` : '';
   return `<div class="tx"><div class="ic">${ic}</div><div class="grow"><div class="row between" style="align-items:flex-start"><div style="font-weight:600;font-size:15px">${title}</div>${bal}</div><div class="small muted">${sub}</div><div class="stack" style="gap:2px;margin-top:4px">${lines.join('')}</div></div></div>`;
 }
@@ -217,24 +219,26 @@ function txRow(x) {
 // ---------- views ----------
 const V = {
   home() {
-    const m = D.member, s = S(), st = m.stamps;
+    const m = D.member, s = S();
     const stats = [['Cashback rate', `${m.rate}%`], ['Eligible spending', M(m.spend)], ['Visits', m.visits], ['Member since', fd(m.joinedAt)], ['Last visit', m.lastVisit ? fd(m.lastVisit) : '—'], ['Member no.', '#' + m.id]];
     return `${card(m)}
-      <div class="qrbox" style="width:188px;height:188px;margin:2px auto 0" role="img" aria-label="Your membership QR code">${qr()}</div>
       ${progress(m)}
-
-      <div class="sec-title"><h2>Your membership</h2><span class="badge tier-${m.tier}">${esc(m.tierName)}</span></div>
+      <div class="sec-title"><h2>Your membership</h2></div>
       <div class="grid3">${stats.map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v" style="font-size:15px">${v}</div></div>`).join('')}</div>
-
-      <div class="sec-title"><h2>Your rewards</h2></div>
-      ${st ? stampCard('glass', st.glasses, st.goal, st.glassRewards) + stampCard('bottle', st.bottles, st.goal, st.bottleRewards) : ''}
-      ${D.campaigns.length ? D.campaigns.map((c) => `<div class="panel row" style="gap:12px;border-color:var(--gold-light);align-items:flex-start">${ICON.star}<div class="grow"><b>${esc(c.name)}</b><div class="small muted">${c.type === 'multiplier' ? `${c.value}× cashback` : `${c.value}% cashback`}${c.categories?.length ? ' on ' + c.categories.map(esc).join(', ') : ''} · until ${ft(c.endAt)}</div>${c.description ? `<div class="small" style="margin-top:3px">${esc(c.description)}</div>` : ''}</div></div>`).join('') : ''}
-      ${s.birthday.enabled ? `<div class="panel row" style="gap:12px;align-items:center">${ICON.gift}<div class="grow"><b>Birthday reward · ${M(s.birthday.amount)}</b><div class="small muted">${m.dob ? `Arrives on your birthday every year, valid ${s.birthday.validDays} days.` : 'Add your date of birth in Profile to receive it.'}</div></div>${m.dob ? '' : '<button class="btn btn-light btn-sm" data-go="profile">Add</button>'}</div>` : ''}
-      ${s.welcome.enabled && m.transactions.some((x) => x.type === 'welcome') ? `<div class="panel row" style="gap:12px;align-items:center">${ICON.gift}<div class="grow"><b>Welcome reward · ${M(s.welcome.amount)}</b><div class="small muted">Added to your wallet when you joined.</div></div></div>` : ''}
-
       <div class="sec-title"><h2>The levels</h2></div>
       <div class="mini-tiers">${s.tiers.map((t, i) => `<div class="mcard tier-${t.key}" style="${t.key === m.tier ? 'outline:2px solid var(--green);outline-offset:2px' : ''}"><div style="font-size:9.5px;font-weight:700;letter-spacing:.8px">${esc(t.name.replace(' MEMBER', ''))}</div><div class="serif" style="font-size:26px;line-height:1.1">${t.rate}%</div><div style="font-size:10px;opacity:.85">${i === 0 ? 'from joining' : 'from ' + M(t.min)}</div>${t.key === m.tier ? '<div style="font-size:10px;font-weight:700;margin-top:2px">You</div>' : ''}</div>`).join('')}</div>
       ${installHint()}`;
+  },
+  qr() {
+    const m = D.member;
+    return `<div class="stack center" style="align-items:center;gap:14px;padding-top:8px">
+      <h1>My QR code</h1>
+      <div class="qrbox" style="width:min(78vw,300px);height:min(78vw,300px);padding:16px" role="img" aria-label="Your membership QR code">${qr()}</div>
+      <div><div class="label">Member number</div><div class="serif" style="font-size:40px;letter-spacing:2px;line-height:1.1">#${m.id}</div></div>
+      <div class="serif" style="font-size:22px">${esc(m.name)}</div>
+      <span class="badge tier-${m.tier}">${esc(m.tierName)}</span>
+      <p class="muted small" style="max-width:300px">Show this code at the bar, or tell our team your member number.</p>
+    </div>`;
   },
   wallet() {
     const m = D.member, w = S().wallet;
@@ -293,21 +297,17 @@ const V = {
       ${D.inbox.length ? D.inbox.map((x) => `<div class="panel stack" style="gap:4px"><div class="row between"><span class="small" style="font-weight:700;letter-spacing:1px;color:${x.at > seen ? 'var(--gold-text)' : 'var(--muted2)'}">${x.at > seen ? '● NEW' : x.scope === 'all' ? 'ALL MEMBERS' : 'FOR YOU'}</span><span class="small muted">${ft(x.at)}</span></div><div class="serif" style="font-size:20px">${esc(x.title)}</div><div style="font-size:14px;line-height:1.5;white-space:pre-line">${esc(x.body)}</div></div>`).join('') : '<p class="muted">No messages yet.</p>'}`;
   },
 };
-const fmtPhone = (p) => p && p.startsWith('961') ? `+961 ${p.slice(3, 5)} ${p.slice(5, 8)} ${p.slice(8)}`.trim() : '+' + esc(p);
-// Stamp card: a row of glasses or bottles that fill with each stamp
-function stampCard(kind, n, goal, ready) {
-  const glass = kind === 'glass';
-  const filled = ready ? goal : Math.max(0, Math.min(goal, n));
-  const left = goal - n, many = glass ? 'glasses' : 'bottles';
-  const w = glass ? 46 : 38, h = glass ? 80 : 92, pre = glass ? 'g' : 'b';
-  const icons = Array.from({ length: goal }, (_, i) => `<svg class="${i < filled ? 'on' : ''}" width="${w}" height="${h}" aria-hidden="true"><use href="#${pre}-${i < filled ? 'full' : 'empty'}"/></svg>`).join('');
-  return `<div class="stampcard ${ready ? 'ready' : ''}" role="group" aria-label="${glass ? 'Wine by the glass' : 'Wine by the bottle'}: ${filled} of ${goal}">
-    <div class="row between" style="align-items:baseline"><span class="serif" style="font-size:19px">${glass ? 'Wine by the glass' : 'Wine by the bottle'}</span><span class="small" style="font-weight:700;color:var(--gold-text)">${filled} / ${goal}</span></div>
-    <div class="stamprow">${icons}</div>
-    ${ready ? `<span class="pill" style="background:var(--pos-bg);color:var(--pos);font-size:12px">${ready > 1 ? ready + ' complimentary ' + many : 'Complimentary ' + kind} ready — show your card</span>`
-      : `<div class="small muted">${left} more ${left === 1 ? kind : many} until your complimentary ${kind}</div>`}
+// Visit glasses on the membership card: each visit fills one glass, 5 visits = 1 complimentary glass
+function visitRow(st) {
+  const ready = st.glassRewards || 0, goal = st.goal, filled = ready ? goal : Math.min(goal, st.glasses), left = goal - st.glasses;
+  const icons = Array.from({ length: goal }, (_, i) => `<svg class="${i < filled ? 'on' : ''}" width="40" height="68" aria-hidden="true"><use href="#g-${i < filled ? 'full' : 'empty'}"/></svg>`).join('');
+  return `<div style="border-top:1px solid var(--t-line);margin-top:16px;padding-top:10px" role="group" aria-label="Visits: ${filled} of ${goal}">
+    <div class="row between" style="align-items:baseline"><span class="k">Visits · free glass</span><span class="v">${filled} / ${goal}</span></div>
+    <div class="stamprow" style="margin:10px 2px 6px">${icons}</div>
+    <div style="font-size:12px;font-weight:600">${ready ? `${ready > 1 ? ready + ' complimentary glasses' : 'Complimentary glass'} ready — show your card to our team` : `${left} more visit${left === 1 ? '' : 's'} until your complimentary glass`}</div>
   </div>`;
 }
+const fmtPhone = (p) => p && p.startsWith('961') ? `+961 ${p.slice(3, 5)} ${p.slice(5, 8)} ${p.slice(8)}`.trim() : '+' + esc(p);
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 function installHint() { return standalone ? '' : `<p class="small muted center">Tip: tap Share → “Add to Home Screen” to keep your card one tap away.</p>`; }
 

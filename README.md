@@ -19,7 +19,7 @@ The project has three apps, all on one Netlify site:
 
 | Who | Address | What it does |
 |---|---|---|
-| Customers | `/join` → `/card` (existing members tap **I'm already a member** to sign in on a new phone) | Sign up, then use a wallet card in the colour of their level (Light red / Silver / Gold). The available cashback is shown large, with a QR code, progress to the next level, transactions, rewards, profile and messages. Customers can add it to the Home Screen, and to Apple Wallet or Google Wallet once you set those up. |
+| Customers | `/join` → `/card` (tabs: Home · QR Code · My Wallet · Transactions · Profile) (existing members tap **I'm already a member** to sign in on a new phone) | Sign up, then use a wallet card in the colour of their level (Light red / Silver / Gold). The available cashback is shown large, with a QR code, progress to the next level, transactions, rewards, profile and messages. Customers can add it to the Home Screen, and to Apple Wallet or Google Wallet once you set those up. |
 | Staff | `/staff` | Each person signs in with their own PIN. Staff scan a member's QR code (or search by name, number, phone or email), then use **Add purchase**: invoice, reference, category, cashback to redeem, then a confirmation screen. They also handle free stamp drinks and phone verification. |
 | Owner | `/staff` with the **owner PIN** | Everything staff can do, plus Dashboard, Customers, Transactions, Campaigns, Analytics, Staff (with the audit log) and Settings. |
 
@@ -96,6 +96,9 @@ Once that's done, customers see **Add to Apple Wallet** in My Wallet. The pass u
 
 ### Phone notifications
 These work with no setup. On iPhone, the customer must add the card to their Home Screen and allow notifications. Every message also appears in the inbox on the card.
+
+## Free glass for visits
+Every visit (any day staff record a purchase, counted once per day) fills one glass on the member's card. After **5 visits** the card shows "Complimentary glass ready". Staff open the member and tap **Give free glass**. The number of visits can be changed in **Settings → Rewards**.
 
 ## Signing in on another phone
 Members choose a **4-digit PIN** when they join. On a new phone they tap **I'm already a member** and enter their phone number and PIN, and their card opens. No staff are needed.

@@ -285,13 +285,14 @@ export function purchase(m, s, campaigns, input, now, by) {
   const earnLot = q.earned > 0 ? { id: rid(6), kind: 'earn', cents: q.earned, orig: q.earned, issuedAt: now, expiresAt: addMonths(now, s.expiry.months) } : null;
   m.spend += q.base;
   if (q.paid > 0 && !m.firstPaidAt) m.firstPaidAt = now;
-  if (!m.lastVisit || dayKey(new Date(m.lastVisit), s.timezone) !== dayKey(new Date(now), s.timezone)) m.visits += 1;
+  const newVisit = !m.lastVisit || dayKey(new Date(m.lastVisit), s.timezone) !== dayKey(new Date(now), s.timezone);
+  if (newVisit) m.visits += 1;
   m.lastVisit = now;
   m.totals.earned += q.earned;
   for (const b of q.bonuses) m.campaignEarned[b.id] = (m.campaignEarned[b.id] || 0) + b.extra;
   if (earnLot) m.lots.push(earnLot);
-  // stamps (glasses / bottles) recorded with the purchase
-  const st = stampAdd(m, s, input.glasses | 0, input.bottles | 0);
+  // every visit (one per day with a purchase) fills one glass; 5 visits = 1 complimentary glass
+  const st = visitStamp(m, s, newVisit);
   const e = entry(m, now, {
     type: 'purchase', label: q.category, category: q.category, invoiceRef: input.invoiceRef, txKey: input.txKey,
     invoice: q.invoice, nonEligible: q.nonEligible, paid: q.paid, base: q.base, rate: q.rate, effectiveRate: q.effectiveRate,
@@ -308,7 +309,7 @@ export function purchase(m, s, campaigns, input, now, by) {
     if (tierIndex(s, want) > tierIndex(s, m.tier)) changeTier(m, s, want, now, sysBy, 'Automatic upgrade', out);
   }
   maybeUnlockWelcome(m, s, now, out);
-  if (st.rewardsReached.length) out.notes.push(note('stamp', true, 'Free drink unlocked!', `You have earned ${st.rewardsReached.join(' and ')}. Show your card to our team to enjoy it.`));
+  if (st.rewardsReached.length) out.notes.push(note('stamp', true, 'Your complimentary glass is ready', 'Thank you for your visits! Show your card to our team to enjoy a complimentary glass.'));
   out.entry.balance = balance(m, now).available;
   return out;
 }
@@ -442,7 +443,16 @@ export function verify(m, s, how, now) {
   return out;
 }
 
-// ---------- stamps (free glass / bottle cards) ----------
+// ---------- visit card: every N visits = 1 complimentary glass ----------
+function visitStamp(m, s, newVisit) {
+  const res = { added: null, rewardsReached: [] };
+  if (!s.stamps.enabled || !newVisit) return res;
+  const g = s.stamps.goal || 5, st = m.stamps;
+  st.glasses += 1; st.lifetimeGlasses += 1;
+  if (st.glasses >= g) { st.glasses -= g; st.glassRewards += 1; res.rewardsReached.push('a complimentary glass'); }
+  res.added = { visit: 1 };
+  return res;
+}
 function stampAdd(m, s, glasses, bottles) {
   const res = { added: null, rewardsReached: [] };
   if (!s.stamps.enabled || (!glasses && !bottles)) return res;

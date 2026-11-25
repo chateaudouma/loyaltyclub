@@ -254,20 +254,27 @@ const canvas = document.createElement('canvas'), cctx = canvas.getContext('2d', 
 VIEWS.scan = async () => {
   set(`<div class="eyebrow">Scan member</div><h1 style="margin-bottom:14px">Find a member</h1>
     <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start">
-      <div class="stack"><div class="cam"><video id="video" playsinline muted class="hidden"></video><div class="frame"></div>
-        <button id="camStart" class="btn btn-gold" style="position:absolute">Open camera</button>
-        <div id="camMsg" style="position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:13px;color:var(--sage)">Scan the QR code on the customer's card</div></div>
-        <p class="small muted">Scanning only finds the member. Nothing is added or redeemed until you confirm a purchase.</p></div>
       <div class="stack">
-        <form id="findForm" class="stack" style="gap:8px"><label class="label" for="q">Or search by name, member no. or phone</label>
-          <div class="row"><input id="q" placeholder="e.g. Michelle, CD1001, 71 234 567" autocomplete="off"><button class="btn btn-green" style="flex:none">Search</button></div></form>
+        <form id="idForm" class="panel stack" style="gap:8px"><label class="label" for="qid">Member number</label>
+          <div class="row"><span class="serif" style="font-size:22px;color:var(--gold-text);flex:none">CD</span><input id="qid" inputmode="numeric" placeholder="1001" autocomplete="off" style="font-size:20px;letter-spacing:2px"><button class="btn btn-gold" style="flex:none">Find</button></div></form>
+        <form id="phForm" class="panel stack" style="gap:8px"><label class="label" for="qph">Phone number</label>
+          <div class="row"><input id="qcc" aria-label="Country code" value="+961" inputmode="tel" style="width:84px;flex:none;text-align:center"><input id="qph" inputmode="tel" placeholder="71 234 567" autocomplete="off" style="font-size:18px"><button class="btn btn-gold" style="flex:none">Find</button></div></form>
+        <form id="findForm" class="stack" style="gap:8px"><label class="label" for="q">Or search by name</label>
+          <div class="row"><input id="q" placeholder="e.g. Michelle" autocomplete="off"><button class="btn btn-green" style="flex:none">Search</button></div></form>
         <div id="found"></div>
         <div class="panel" id="todayBox"><span class="label">Today</span><div id="today" class="small muted" style="margin-top:4px">…</div></div>
-      </div></div>`);
+      </div>
+      <div class="stack"><div class="cam"><video id="video" playsinline muted class="hidden"></video><div class="frame"></div>
+        <button id="camStart" class="btn btn-gold" style="position:absolute">Open camera</button>
+        <div id="camMsg" style="position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:13px;color:var(--sage)">Scan the QR code on the customer's card (optional)</div></div>
+        <p class="small muted">Scanning only finds the member. Nothing is added or redeemed until you confirm a purchase.</p></div>
+</div>`);
   on('camStart', 'onclick', startCam);
   $('findForm').onsubmit = (e) => { e.preventDefault(); find($('q').value); };
+  $('idForm').onsubmit = (e) => { e.preventDefault(); const v = $('qid').value.replace(/\D/g, ''); if (v) find('CD' + v); };
+  $('phForm').onsubmit = (e) => { e.preventDefault(); const v = $('qph').value.replace(/\D/g, '').replace(/^0+/, ''); if (v) find('+' + $('qcc').value.replace(/\D/g, '') + v); };
   api('/staff/today').then((t) => { $('today').innerHTML = `${t.purchases} purchases · ${M(t.sales)} paid · ${M(t.earned)} cashback earned · ${M(t.redeemed)} redeemed · ${t.joins} new members`; }).catch(() => {});
-  $('q').focus();
+  $('qid').focus();
 };
 async function startCam() {
   try {
@@ -336,7 +343,7 @@ function renderMember() {
     <div class="stack">
       <button class="btn btn-gold full" id="addPurchase" ${m.status !== 'active' ? 'disabled' : ''} style="min-height:58px;font-size:17px">Add purchase</button>
       ${CURRENT.campaigns?.length ? `<div class="panel small" style="border-color:var(--gold-light)"><b>Active now:</b> ${CURRENT.campaigns.map((c) => esc(c.name)).join(', ')}</div>` : ''}
-      ${st && (st.glassRewards || st.bottleRewards) ? `<div class="panel row between"><span><b>Free drink ready</b><br><span class="small muted">${st.glassRewards} glass · ${st.bottleRewards} bottle</span></span><span class="row">${st.glassRewards ? '<button class="btn btn-green btn-sm" data-free="glass">Give glass</button>' : ''}${st.bottleRewards ? '<button class="btn btn-green btn-sm" data-free="bottle">Give bottle</button>' : ''}</span></div>` : st ? `<div class="small muted">Stamp cards: ${st.glasses}/${st.goal} glasses · ${st.bottles}/${st.goal} bottles</div>` : ''}
+      ${st && st.glassRewards ? `<div class="panel row between" style="border:2px solid var(--gold)"><span><b>Complimentary glass ready</b><br><span class="small muted">${st.glassRewards > 1 ? st.glassRewards + ' glasses earned from visits' : 'Earned from 5 visits'}</span></span><button class="btn btn-green btn-sm" data-free="glass">Give free glass</button></div>` : st ? `<div class="small muted">Visits towards a free glass: ${st.glasses} / ${st.goal}</div>` : ''}
       <button class="btn btn-light full" id="cardLink">Send card link to the customer (WhatsApp)</button>
       ${own ? `<div class="row wrap-row" style="gap:8px">
         <button class="btn btn-light btn-sm" data-o="comp">Complimentary cashback</button><button class="btn btn-light btn-sm" data-o="adj">Adjust balance</button>
@@ -388,17 +395,13 @@ function purchaseFlow() {
       ${ME.perms.redeem ? `<div class="field"><span class="label">Redeem cashback</span>
         <div class="seg" id="redSeg"><button type="button" data-red="none" class="on">Don't redeem</button><button type="button" data-red="all">Full balance</button><button type="button" data-red="custom">Custom amount</button></div>
         <input id="redAmt" inputmode="decimal" placeholder="Amount to redeem" class="hidden"></div>` : ''}
-      ${st.enabled ? `<div class="field"><span class="label">Stamp cards</span><div class="row wrap-row" style="gap:18px">
-        <div class="step"><span class="small">Glasses</span><button type="button" data-st="g-">−</button><b id="gN">0</b><button type="button" data-st="g+">+</button></div>
-        <div class="step"><span class="small">Bottles</span><button type="button" data-st="b-">−</button><b id="bN">0</b><button type="button" data-st="b+">+</button></div></div></div>` : ''}
       <div class="field"><label class="label" for="notes">Notes (optional)</label><input id="notes" maxlength="300"></div>
     </form>
     <div class="panel stack" style="gap:2px;position:sticky;top:12px" id="preview"><span class="label">Calculation</span><p class="muted small" style="padding:10px 0">Enter the invoice amount.</p></div>
   </div>`);
-  let red = 'none', g = 0, b = 0, q = null, timer;
+  let red = 'none', q = null, timer;
   on('pBack', 'onclick', renderMember);
   document.querySelectorAll('[data-red]').forEach((x) => x.onclick = () => { red = x.dataset.red; document.querySelectorAll('[data-red]').forEach((y) => y.classList.toggle('on', y === x)); $('redAmt').classList.toggle('hidden', red !== 'custom'); refresh(); });
-  document.querySelectorAll('[data-st]').forEach((x) => x.onclick = () => { const k = x.dataset.st; if (k === 'g+') g++; if (k === 'g-') g = Math.max(0, g - 1); if (k === 'b+') b++; if (k === 'b-') b = Math.max(0, b - 1); $('gN').textContent = g; $('bN').textContent = b; });
   ['inv', 'ne', 'redAmt', 'cat'].forEach((id) => { const el = $(id); if (el) el.oninput = el.onchange = () => { clearTimeout(timer); timer = setTimeout(refresh, 250); }; });
   const body = () => ({ memberId: m.id, invoice: toMoney($('inv').value), nonEligible: toMoney($('ne').value), category: $('cat').value, redeem: red === 'none' ? '' : red === 'all' ? (q ? q.maxRedeem / 100 : '') : toMoney($('redAmt').value) });
   async function refresh() {
@@ -413,10 +416,10 @@ function purchaseFlow() {
   function review() {
     const ref = $('ref').value.trim();
     if (!ref) { $('ref').focus(); return toast('Enter the invoice or receipt reference'); }
-    const payload = { ...body(), invoiceRef: ref, notes: $('notes').value, glasses: g, bottles: b, txKey: key };
+    const payload = { ...body(), invoiceRef: ref, notes: $('notes').value, txKey: key };
     scrollTo(0, 0);
     set(`<button class="link" id="rBack">‹ Edit</button><h1 style="margin:6px 0 4px">Confirm purchase</h1><p class="muted" style="margin-bottom:14px">${esc(m.name)} · #${m.id} · invoice ${esc(ref)}</p>
-      <div class="panel" style="max-width:520px">${summary(q)}${g || b ? `<div class="sum"><span>Stamps</span><b>${g ? '+' + g + ' glass ' : ''}${b ? '+' + b + ' bottle' : ''}</b></div>` : ''}
+      <div class="panel" style="max-width:520px">${summary(q)}
         <div class="row" style="margin-top:14px"><button class="btn btn-ghost" id="rCancel">Back</button><button class="btn btn-gold grow" id="rGo" style="min-height:56px;font-size:17px">Confirm ${M(q.paid)} payment</button></div></div>`);
     on('rBack', 'onclick', () => { purchaseFlow(); });
     on('rCancel', 'onclick', () => { purchaseFlow(); });
@@ -650,7 +653,7 @@ VIEWS.settings = async () => {
     <div class="panel stack"><h3>Rewards</h3>
       <div class="grid2"><label class="row small"><input type="checkbox" name="wOn" ${s.welcome.enabled ? 'checked' : ''}> Welcome reward</label><div class="field"><label class="label">Amount ($)</label><input name="wAmt" inputmode="decimal" value="${money(s.welcome.amount)}"></div></div>
       <div class="grid3"><label class="row small"><input type="checkbox" name="bOn" ${s.birthday.enabled ? 'checked' : ''}> Birthday reward</label><div class="field"><label class="label">Amount ($)</label><input name="bAmt" inputmode="decimal" value="${money(s.birthday.amount)}"></div><div class="field"><label class="label">Valid (days)</label><input name="bDays" inputmode="numeric" value="${s.birthday.validDays}"></div></div>
-      <div class="grid2"><label class="row small"><input type="checkbox" name="stOn" ${s.stamps.enabled ? 'checked' : ''}> Stamp cards (free glass / bottle)</label><div class="field"><label class="label">Stamps for a free drink</label><input name="stGoal" inputmode="numeric" value="${s.stamps.goal}"></div></div></div>
+      <div class="grid2"><label class="row small"><input type="checkbox" name="stOn" ${s.stamps.enabled ? 'checked' : ''}> Free glass for visits</label><div class="field"><label class="label">Visits for a free glass</label><input name="stGoal" inputmode="numeric" value="${s.stamps.goal}"></div></div></div>
     <div class="panel stack"><h3>Cashback rules</h3>
       <div class="grid2"><div class="field"><label class="label">Cashback expires after (months)</label><input name="expM" inputmode="numeric" value="${s.expiry.months}"></div><div class="field"><label class="label">Warn members (days before)</label><input name="expW" inputmode="numeric" value="${s.expiry.warnDays}"></div></div>
       <div class="grid2"><div class="field"><label class="label">Minimum redemption ($)</label><input name="rMin" inputmode="decimal" value="${money(s.redemption.minCents)}"></div><div class="field"><label class="label">Max % of an invoice payable with cashback</label><input name="rMax" inputmode="numeric" value="${s.redemption.maxPercentOfInvoice}"></div></div>
