@@ -13,7 +13,7 @@
 
 **Saving credits:** the free plan has 300 credits a month, and every upload or Publish costs 15. Put all changed files into one upload. Settings, levels, rewards, campaigns and staff are changed inside the owner app at no cost.
 
----
+--- 
 
 The project has three apps, all on one Netlify site:
 
