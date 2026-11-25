@@ -56,9 +56,9 @@ await t('Existing member signs in on a new phone: code shown on screen, confirme
 await t('Under-18 date of birth is refused', async () => {
   const r = await join('Young', '76 999 999', { dob: '2012-01-01' }); assert.equal(r.status, 400);
 });
-await t('Welcome reward: $2 issued but locked, not counted as spending', async () => {
+await t('Welcome reward: $2 usable immediately after joining, not counted as spending', async () => {
   const r = await me(A);
-  assert.equal(r.data.member.available, 0); assert.equal(r.data.member.locked, 200); assert.equal(r.data.member.spend, 0);
+  assert.equal(r.data.member.available, 200); assert.equal(r.data.member.locked, 0); assert.equal(r.data.member.spend, 0);
   assert.equal(r.data.member.tier, 'classic'); assert.equal(r.data.member.rate, 5);
   assert.match(r.data.inbox[0].title, /Welcome/);
 });
@@ -89,24 +89,18 @@ await t('Scanning alone changes nothing (purchase needs explicit confirmation)',
 });
 await t('Quote previews the maths without saving', async () => {
   const q = (await call('POST', '/staff/quote', { memberId: 'CD1001', invoice: '100', category: 'Wine bottles' }, staff)).data.quote;
-  assert.equal(q.earned, 500); assert.equal(q.newBalance, 500); assert.equal(q.rate, 5);
-  assert.equal((await me(A)).data.member.available, 0);
+  assert.equal(q.earned, 500); assert.equal(q.newBalance, 700); assert.equal(q.rate, 5);
+  assert.equal((await me(A)).data.member.available, 200);
 });
-await t('Classic purchase: $100 at 5% = $5.00; first purchase unlocks nothing until verified', async () => {
+await t('Classic purchase: $100 at 5% = $5.00 on top of the $2 welcome', async () => {
   const r = await buy('CD1001', '100');
-  assert.equal(r.status, 200, JSON.stringify(r.data)); assert.equal(r.data.entry.earned, 500); assert.equal(r.data.entry.balance, 500);
+  assert.equal(r.status, 200, JSON.stringify(r.data)); assert.equal(r.data.entry.earned, 500); assert.equal(r.data.entry.balance, 700);
   const m = (await me(A)).data.member;
-  assert.equal(m.available, 500); assert.equal(m.locked, 200); assert.equal(m.spend, 10000); assert.equal(m.visits, 1);
+  assert.equal(m.available, 700); assert.equal(m.spend, 10000); assert.equal(m.visits, 1);
 });
-await t('Phone verification (code sent by WhatsApp) unlocks the welcome reward after the first paid purchase', async () => {
-  const st = await call('POST', '/staff/verify/start', { memberId: 'CD1001' }, staff);
-  assert.match(st.data.whatsapp, /^https:\/\/wa\.me\/96171234567\?text=/);
-  const code = decodeURIComponent(st.data.whatsapp.split('text=')[1]).match(/(\d{6})/)[1];
-  assert.equal((await call('POST', '/staff/verify/confirm', { memberId: 'CD1001', code: '000000' }, staff)).status, 400);
-  const ok = await call('POST', '/staff/verify/confirm', { memberId: 'CD1001', code }, staff);
-  assert.equal(ok.status, 200);
-  const m = (await me(A)).data.member;
-  assert.equal(m.available, 700); assert.equal(m.locked, 0); assert.equal(m.spend, 10000, 'welcome not counted as spending');
+await t('Welcome reward can be spent on the very first purchase', async () => {
+  const r = await buy('CD1003', '10', { redeem: '2' });
+  assert.equal(r.status, 200, JSON.stringify(r.data)); assert.equal(r.data.entry.redeemed, 200); assert.equal(r.data.entry.paid, 800);
 });
 await t('Duplicate invoice reference is blocked; same confirmation sent twice is not double-counted', async () => {
   const key = crypto.randomUUID();
@@ -115,7 +109,7 @@ await t('Duplicate invoice reference is blocked; same confirmation sent twice is
   assert.equal(one.status, 200); assert.equal(again.status, 200); assert.equal(again.data.duplicate, true);
   const other = await buy('CD1001', '20', { invoiceRef: 'r 555', txKey: crypto.randomUUID() });
   assert.equal(other.status, 409);
-  assert.equal((await me(B)).data.member.available, 100);
+  assert.equal((await me(B)).data.member.available, 300);
 });
 await t('Partial redemption (spec example): $50 invoice, redeem $5 of $7 -> pay $45, earn 5% of $45 = $2.25', async () => {
   const r = await buy('CD1001', '50', { redeem: '5' });
@@ -124,7 +118,7 @@ await t('Partial redemption (spec example): $50 invoice, redeem $5 of $7 -> pay 
 });
 await t('Cannot redeem more than the wallet balance or the invoice amount', async () => {
   assert.equal((await buy('CD1001', '50', { redeem: '100' })).status, 400);
-  assert.equal((await buy('CD1003', '10', { redeem: '0.01' })).status, 400);
+  assert.equal((await buy('CD1003', '10', { redeem: '1' })).status, 400);
 });
 await t('Full redemption: redeem whole balance', async () => {
   const bal = (await me(A)).data.member.available;
@@ -149,8 +143,10 @@ await t('Automatic upgrade to SEMI-PREMIUM at $250 — new rate applies only to 
   const r2 = await buy('CD1002', '100');
   assert.equal(r2.data.entry.earned, 750, 'spec example: $100 at 7.5% = $7.50');
 });
-await t('Automatic upgrade to PREMIUM at $750, then 10%', async () => {
+await t('Automatic upgrade to PREMIUM at $1,000, then 10%', async () => {
   await buy('CD1002', '400');
+  assert.equal((await me(B)).data.member.tier, 'semi', '$760 is still Semi-Premium');
+  await buy('CD1002', '240');
   assert.equal((await me(B)).data.member.tier, 'premium');
   const r = await buy('CD1002', '100');
   assert.equal(r.data.entry.earned, 1000);
@@ -262,7 +258,7 @@ await t('Settings: owner changes rates and thresholds without code changes', asy
   assert.equal(r.data.entry.earned, 60);
   s.tiers[0].rate = 5; s.tiers[2].min = 10; // invalid: thresholds must go up
   assert.equal((await call('POST', '/owner/settings', { settings: s }, owner)).status, 400);
-  s.tiers[2].min = 75000;
+  s.tiers[2].min = 100000;
   assert.equal((await call('POST', '/owner/settings', { settings: s }, owner)).status, 200);
 });
 await t('Cashback expires 12 months after issuance, with a warning first', async () => {

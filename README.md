@@ -13,7 +13,7 @@
 
 **Saving credits:** the free plan has 300 credits a month, and every upload or Publish costs 15. Put all changed files into one upload. Settings, levels, rewards, campaigns and staff are changed inside the owner app at no cost.
 
---- 
+---
 
 The project has three apps, all on one Netlify site:
 
@@ -43,7 +43,7 @@ The project has three apps, all on one Netlify site:
 
 ## The rules (all can be changed in **Settings**, no code needed)
 
-- **Levels:** CLASSIC MEMBER 5% (from day one), SEMI-PREMIUM MEMBER 7.5% (from $250 lifetime eligible spending), PREMIUM MEMBER 10% (from $750).
+- **Levels:** CLASSIC MEMBER 5% (from day one), SEMI-PREMIUM MEMBER 7.5% (from $250 lifetime eligible spending), PREMIUM MEMBER 10% (from $1,000).
   - Upgrades are automatic and apply from the **next** purchase.
   - Levels never expire. Only the owner can lower a level. The one exception: if a refund takes away the spending that earned a level, the level is taken back too. This stops people from buying, getting upgraded and then refunding.
 - **Cashback** is store credit in USD.

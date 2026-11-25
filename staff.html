@@ -231,7 +231,7 @@ VIEWS.dashboard = async () => {
       <div class="metric"><div class="k">Sales this month</div><div class="v">${M(a.sales)}</div><div class="s">eligible member sales</div></div>
       <div class="metric"><div class="k">Cashback issued</div><div class="v">${M(a.issued)}</div><div class="s">${a.costPercent}% of sales</div></div>
       <div class="metric"><div class="k">Cashback redeemed</div><div class="v">${M(a.redeemed)}</div></div>
-      <div class="metric"><div class="k">Outstanding balances</div><div class="v">${M(a.outstanding)}</div><div class="s">+ ${M(a.lockedWelcome)} locked welcome</div></div>
+      <div class="metric"><div class="k">Outstanding balances</div><div class="v">${M(a.outstanding)}</div></div>
     </div>
     <div class="grid2" style="margin-top:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
       <div class="stack" style="gap:8px"><h3>Recent transactions</h3><div class="list">${tx.events.slice(0, 8).map(evRow).join('') || '<div class="li muted">No transactions yet this month.</div>'}</div></div>
@@ -328,7 +328,7 @@ function renderMember() {
       </div>
       ${m.next ? `<div class="panel stack" style="gap:6px"><div class="tbar"><i style="width:${(m.next.progress * 100).toFixed(1)}%"></i></div><span class="small">${M(m.next.remaining)} to <b>${esc(m.next.name)}</b></span></div>` : ''}
       <div class="panel small stack" style="gap:6px">
-        <div class="row between"><span class="muted">Phone</span><span>${m.phone ? (m.phone.startsWith('…') ? esc(m.phone) : '+' + esc(m.phone)) : '—'} ${m.verified.phone ? '<span class="pill" style="background:var(--pos-bg);color:var(--pos)">verified</span>' : ''}</span></div>
+        <div class="row between"><span class="muted">Phone</span><span>${m.phone ? (m.phone.startsWith('…') ? esc(m.phone) : '+' + esc(m.phone)) : '—'}</span></div>
         <div class="row between"><span class="muted">Member since</span><span>${fd(m.joinedAt)}</span></div>
         ${m.dob ? `<div class="row between"><span class="muted">Birthday</span><span>${esc(m.dob)}</span></div>` : ''}
       </div>
@@ -339,7 +339,6 @@ function renderMember() {
       ${st && (st.glassRewards || st.bottleRewards) ? `<div class="panel row between"><span><b>Free drink ready</b><br><span class="small muted">${st.glassRewards} glass · ${st.bottleRewards} bottle</span></span><span class="row">${st.glassRewards ? '<button class="btn btn-green btn-sm" data-free="glass">Give glass</button>' : ''}${st.bottleRewards ? '<button class="btn btn-green btn-sm" data-free="bottle">Give bottle</button>' : ''}</span></div>` : st ? `<div class="small muted">Stamp cards: ${st.glasses}/${st.goal} glasses · ${st.bottles}/${st.goal} bottles</div>` : ''}
       ${m.pendingSignIn ? `<div class="panel stack" style="gap:8px;border:2px solid var(--gold)"><b>Sign-in request</b><span class="small muted">The customer is opening their card on a new phone. Check it is really them, then type the 6-digit code shown on their screen.</span><div class="row"><input id="siCode" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="max-width:170px"><button class="btn btn-green btn-sm" id="siOk">Confirm sign-in</button></div></div>` : `<details class="small"><summary class="muted" style="cursor:pointer">Customer signing in on a new phone?</summary><div class="row" style="margin-top:8px"><input id="siCode" inputmode="numeric" maxlength="6" placeholder="Code on their screen" style="max-width:190px"><button class="btn btn-green btn-sm" id="siOk">Confirm</button></div></details>`}
       <button class="btn btn-light full" id="cardLink">Send card link to the customer (WhatsApp)</button>
-      ${!m.verified.phone ? `<div class="panel stack" style="gap:8px"><b>Verify phone number</b><span class="small muted">Needed to unlock the welcome reward. Send a code by WhatsApp; the customer reads it back to you.</span><div class="row wrap-row"><button class="btn btn-light btn-sm" id="vSend">Send code (WhatsApp)</button><input id="vCode" inputmode="numeric" placeholder="6-digit code" style="height:40px;max-width:150px"><button class="btn btn-green btn-sm" id="vOk">Confirm</button></div></div>` : ''}
       ${own ? `<div class="row wrap-row" style="gap:8px">
         <button class="btn btn-light btn-sm" data-o="comp">Complimentary cashback</button><button class="btn btn-light btn-sm" data-o="adj">Adjust balance</button>
         <button class="btn btn-light btn-sm" data-o="tier">Change level</button><button class="btn btn-light btn-sm" data-o="status">${m.status === 'active' ? 'Suspend' : 'Reactivate'}</button>
@@ -354,8 +353,6 @@ function renderMember() {
   document.querySelectorAll('[data-free]').forEach((b) => b.onclick = async () => { try { const d = await api('/staff/stamp-redeem', { memberId: m.id, kind: b.dataset.free }); CURRENT = { ...d.member, campaigns: CURRENT.campaigns }; toast('Free ' + b.dataset.free + ' recorded'); renderMember(); } catch (e) { toast(e.message); } });
   on('siOk', 'onclick', async () => { try { const d = await api('/staff/login-approve', { memberId: m.id, code: $('siCode').value }); CURRENT = { ...d.member, campaigns: CURRENT.campaigns }; toast('Signed in — the card is opening on their phone'); renderMember(); } catch (e) { toast(e.message); } });
   on('cardLink', 'onclick', async () => { try { const d = await api('/staff/card-link', { memberId: m.id }); window.open(d.whatsapp, '_blank'); } catch (e) { toast(e.message); } });
-  on('vSend', 'onclick', async () => { try { const d = await api('/staff/verify/start', { memberId: m.id }); window.open(d.whatsapp, '_blank'); toast('WhatsApp opened with the code'); } catch (e) { toast(e.message); } });
-  on('vOk', 'onclick', async () => { try { const d = await api('/staff/verify/confirm', { memberId: m.id, code: $('vCode').value }); CURRENT = { ...d.member, campaigns: CURRENT.campaigns }; toast('Phone verified'); renderMember(); } catch (e) { toast(e.message); } });
   document.querySelectorAll('[data-o]').forEach((b) => b.onclick = () => ownerAction(b.dataset.o));
   document.querySelectorAll('[data-refund]').forEach((b) => b.onclick = () => refundFlow(b.dataset.refund));
   document.querySelectorAll('[data-reverse]').forEach((b) => b.onclick = () => reverseFlow(b.dataset.reverse));
@@ -367,7 +364,7 @@ function txLine(x, own, canRefund) {
     if (x.redeemed) p.push(`<span class="neg">−${M(x.redeemed)} redeemed</span>`);
     if (x.earned) p.push(`<span class="pos">+${M(x.earned)} earned</span>`);
     if (x.refunded) p.push(`<span class="neg">refunded ${M(x.refunded)}</span>`);
-  } else if (x.reward) p.push(`<span class="pos">+${M(x.reward)}</span>${x.locked ? ' (locked)' : ''}`);
+  } else if (x.reward) p.push(`<span class="pos">+${M(x.reward)}</span>`);
   else if (x.expired) p.push(`<span class="muted">−${M(x.expired)} expired</span>`);
   else if (x.adjust) p.push(`<span class="${x.adjust > 0 ? 'pos' : 'neg'}">${x.adjust > 0 ? '+' : '−'}${M(Math.abs(x.adjust))}</span>`);
   if (x.refund) p.push(`Refunded ${M(x.refund)}${x.restored ? ` · <span class="pos">+${M(x.restored)} returned</span>` : ''}${x.earnedReversed ? ` · <span class="neg">−${M(x.earnedReversed)} reversed</span>` : ''}${x.cashRefund !== undefined ? ` · cash back ${M(x.cashRefund)}` : ''}${x.shortfall ? ` · ${M(x.shortfall)} kept (cashback already spent)` : ''}`);
@@ -501,7 +498,7 @@ VIEWS.customers = async () => {
   set(`<div class="row between wrap-row" style="margin-bottom:12px"><div><div class="eyebrow">Customers</div><h1>${CUST.length} members</h1></div><button class="btn btn-light" id="cCsv">Export (CSV / Excel)</button></div>
     <div class="row wrap-row" style="margin-bottom:12px"><input id="cq" placeholder="Search name, number or phone" value="${esc(CF.q)}" style="max-width:320px">
       <select id="ct" style="width:auto"><option value="">All levels</option>${SET.tiers.map((t) => `<option value="${t.key}" ${CF.tier === t.key ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
-      <select id="cs" style="width:auto"><option value="">Any status</option><option value="active" ${CF.status === 'active' ? 'selected' : ''}>Active</option><option value="suspended" ${CF.status === 'suspended' ? 'selected' : ''}>Suspended</option><option value="unverified" ${CF.status === 'unverified' ? 'selected' : ''}>Not verified</option></select>
+      <select id="cs" style="width:auto"><option value="">Any status</option><option value="active" ${CF.status === 'active' ? 'selected' : ''}>Active</option><option value="suspended" ${CF.status === 'suspended' ? 'selected' : ''}>Suspended</option></select>
       <select id="co" style="width:auto">${[['id', 'Member no.'], ['name', 'Name'], ['spend', 'Highest spending'], ['available', 'Highest balance'], ['visits', 'Most visits'], ['last', 'Recently visited']].map(([a, b]) => `<option value="${a}" ${CF.sort === a ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
     <div class="tablewrap"><table><thead><tr><th>No.</th><th>Name</th><th>Level</th><th>Balance</th><th>Spending</th><th>Visits</th><th>Last visit</th><th>Phone</th><th>Status</th></tr></thead><tbody id="cRows"></tbody></table></div>`);
   const draw = () => {
@@ -509,7 +506,7 @@ VIEWS.customers = async () => {
     let l = CUST.filter((x) => (!q || x.name.toLowerCase().includes(q) || x.id.toLowerCase().includes(q.replace('#', '')) || (qd.length >= 3 && x.phone.includes(qd))) && (!CF.tier || x.tier === CF.tier) && (!CF.status || (CF.status === 'unverified' ? !x.verified : x.status === CF.status)));
     const s = { id: (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }), name: (a, b) => a.name.localeCompare(b.name), spend: (a, b) => b.spend - a.spend, available: (a, b) => b.available - a.available, visits: (a, b) => b.visits - a.visits, last: (a, b) => (b.lastVisit || '').localeCompare(a.lastVisit || '') }[CF.sort];
     l = l.sort(s);
-    $('cRows').innerHTML = l.map((x) => `<tr data-mem="${x.id}" style="cursor:pointer"><td>#${x.id}</td><td><b>${esc(x.name)}</b></td><td><span class="badge tier-${x.tier}">${esc(tierName(x.tier))}</span></td><td>${M(x.available)}</td><td>${M(x.spend)}</td><td>${x.visits}</td><td>${x.lastVisit ? fd(x.lastVisit) : '—'}</td><td>+${esc(x.phone)}</td><td>${x.status === 'active' ? (x.verified ? 'Active' : 'Active · not verified') : '<span class="neg">Suspended</span>'}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">No members match.</td></tr>';
+    $('cRows').innerHTML = l.map((x) => `<tr data-mem="${x.id}" style="cursor:pointer"><td>#${x.id}</td><td><b>${esc(x.name)}</b></td><td><span class="badge tier-${x.tier}">${esc(tierName(x.tier))}</span></td><td>${M(x.available)}</td><td>${M(x.spend)}</td><td>${x.visits}</td><td>${x.lastVisit ? fd(x.lastVisit) : '—'}</td><td>+${esc(x.phone)}</td><td>${x.status === 'active' ? 'Active' : '<span class="neg">Suspended</span>'}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">No members match.</td></tr>';
     bindMem();
   };
   ['cq', 'ct', 'cs', 'co'].forEach((id) => $(id).oninput = $(id).onchange = () => { CF = { q: $('cq').value, tier: $('ct').value, status: $('cs').value, sort: $('co').value }; draw(); });

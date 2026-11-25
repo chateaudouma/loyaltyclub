@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS = {
   tiers: [
     { key: 'classic', name: 'CLASSIC MEMBER', rate: 5, min: 0 },
     { key: 'semi', name: 'SEMI-PREMIUM MEMBER', rate: 7.5, min: 25000 },
-    { key: 'premium', name: 'PREMIUM MEMBER', rate: 10, min: 75000 },
+    { key: 'premium', name: 'PREMIUM MEMBER', rate: 10, min: 100000 },
   ],
   welcome: { enabled: true, amount: 200 },
   birthday: { enabled: true, amount: 500, validDays: 30 },
@@ -80,11 +80,12 @@ export function newMember({ id, name, phone, email, dob, marketing }, s, now) {
   };
   const out = { notes: [], events: [] };
   if (s.welcome.enabled && s.welcome.amount > 0) {
-    m.lots.push({ id: rid(6), kind: 'welcome', cents: s.welcome.amount, orig: s.welcome.amount, issuedAt: now, expiresAt: null, locked: true });
+    // usable straight away (no verification or purchase needed)
+    m.lots.push({ id: rid(6), kind: 'welcome', cents: s.welcome.amount, orig: s.welcome.amount, issuedAt: now, expiresAt: addMonths(now, s.expiry.months) });
     m.totals.welcome += s.welcome.amount;
-    const e = entry(m, now, { type: 'welcome', label: 'Welcome reward (unlocks after verification and first purchase)', reward: s.welcome.amount, locked: true }, sysBy);
+    const e = entry(m, now, { type: 'welcome', label: 'Welcome reward', reward: s.welcome.amount }, sysBy);
     out.events.push(e);
-    if (s.notifications.welcome) out.notes.push(note('welcome', true, `Welcome to the club, ${name.split(' ')[0]}!`, `A ${fmt(s.welcome.amount)} welcome reward is waiting for you. It unlocks after your number is verified and your first purchase.`));
+    if (s.notifications.welcome) out.notes.push(note('welcome', true, `Welcome to the club, ${name.split(' ')[0]}!`, `A ${fmt(s.welcome.amount)} welcome reward is already in your wallet. Use it on any visit.`));
   }
   return { m, ...out };
 }
@@ -157,6 +158,9 @@ function take(m, cents, now, preferLotId) {
 // ---------- expiry, birthday ----------
 export function applyExpiry(m, s, now) {
   const out = { changed: false, notes: [], events: [] };
+  for (const l of m.lots) {
+    if (l.kind === 'welcome' && l.locked) { l.locked = false; l.expiresAt = addMonths(now, s.expiry.months); out.changed = true; out.events.push(entry(m, now, { type: 'welcome-unlock', label: 'Welcome reward now usable', reward: 0, unlocked: l.cents }, sysBy)); }
+  }
   let expired = 0;
   for (const l of m.lots) {
     if (l.cents > 0 && !l.locked && l.expiresAt && l.expiresAt <= now) { expired += l.cents; l.expiredCents = (l.expiredCents || 0) + l.cents; l.cents = 0; }
