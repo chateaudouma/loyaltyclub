@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My card — Château Douma Loyalty Club</title>
+<meta name="theme-color" content="#F6F1E7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Loyalty Club">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+<script>
+  (function () {
+    const p = new URLSearchParams(location.search);
+    let m = p.get('m'), t = p.get('t');
+    const saved = JSON.parse(localStorage.getItem('douma_card') || 'null');
+    if (!(m && t) && saved) { m = saved.m; t = saved.t; }
+    window.CARD = m && t ? { m, t } : null;
+    const l = document.createElement('link'); l.rel = 'manifest';
+    l.href = window.CARD ? `/api/manifest?m=${encodeURIComponent(m)}&t=${encodeURIComponent(t)}` : '/api/manifest';
+    document.head.appendChild(l);
+  })();
+</script>
+<script src="/qrcode.js"></script>
+<script src="/terms.js"></script>
+<style>
+  .app{max-width:480px;margin:0 auto;min-height:100vh;padding:calc(12px + env(safe-area-inset-top)) 18px calc(150px + env(safe-area-inset-bottom))}
+  header.top{display:flex;align-items:center;justify-content:space-between;height:52px}
+  .bell{position:relative;width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .dot{position:absolute;top:9px;right:9px;width:10px;height:10px;border-radius:50%;background:#B23A2E;border:2px solid var(--ivory)}
+  /* bottom bar sits higher, leaving room underneath for the "Powered by Netlify" badge */
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(251,248,241,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 10px calc(44px + env(safe-area-inset-bottom));z-index:40}
+  nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+  nav.tabs button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;font:600 10.5px var(--sans);color:var(--muted2);cursor:pointer;min-height:54px}
+  nav.tabs button.on{color:var(--green)}
+  nav.tabs button.on svg{stroke:var(--green)}
+  .balance-big{font-family:var(--serif);font-weight:700;font-size:54px;line-height:1;letter-spacing:-.5px}
+  .tx{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .tx .ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--field);border:1px solid var(--line)}
+  .amt{font-weight:700;font-size:14px;white-space:nowrap}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .stat .k{font-size:10px;letter-spacing:1.4px;color:var(--muted2);font-weight:600;text-transform:uppercase}
+  .stat .v{font-size:17px;font-weight:700;margin-top:3px}
+  .stampdots{display:flex;gap:6px}
+  .stampdots i{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line2);background:var(--field)}
+  .stampdots i.on{background:var(--gold);border-color:var(--gold)}
+  dialog{border:none;border-radius:22px;padding:0;max-width:440px;width:calc(100% - 32px);background:var(--paper)}
+  dialog::backdrop{background:rgba(23,44,35,.55)}
+  .toast{bottom:calc(130px + env(safe-area-inset-bottom))!important}
+  .stampcard{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px 16px 14px}
+  .stampcard.ready{border:2px solid var(--gold)}
+  .stamprow{display:flex;justify-content:space-between;align-items:flex-end;margin:14px 2px 10px}
+  .stamprow svg{flex:none}
+  .stamprow .on{animation:pop .5s cubic-bezier(.2,1.4,.4,1) both}
+  .stamprow .on:nth-child(2){animation-delay:.07s}.stamprow .on:nth-child(3){animation-delay:.14s}.stamprow .on:nth-child(4){animation-delay:.21s}.stamprow .on:nth-child(5){animation-delay:.28s}
+  @keyframes pop{from{transform:scale(.6);opacity:0}}
+  @media (prefers-reduced-motion:reduce){.stamprow .on{animation:none}}
+  .mini-tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .mini-tiers .mcard{padding:10px 8px;border-radius:14px;text-align:center}
+  .mini-tiers .mcard::after{display:none}
+  .sec-title{display:flex;align-items:baseline;justify-content:space-between;margin-top:6px}
+  .switch{position:relative;width:50px;height:30px;flex:none}
+  .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+  .switch span{position:absolute;inset:0;border-radius:99px;background:#D3CABB;transition:.2s}
+  .switch span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .switch input:checked+span{background:var(--green)} .switch input:checked+span::after{left:23px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <img src="/monogram.png" alt="Château Douma" style="height:34px">
+    <div class="eyebrow" id="hdrTitle">Loyalty Club</div>
+    <button class="bell" id="bell" aria-label="Messages"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A453D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span id="dot" class="dot hidden"></span></button>
+  </header>
+
+  <div id="loading" style="display:flex;justify-content:center;padding:80px 0"><div class="spinner"></div></div>
+  <div id="nocard" class="hidden stack center" style="align-items:center;padding:40px 0">
+    <img src="/logo.png" alt="Château Douma" style="width:200px">
+    <h1 style="font-size:28px">No card on this phone yet</h1>
+    <p class="muted">Already a member? Sign in with your phone number. New here? Join in a few seconds.</p>
+    <a class="btn btn-green full" href="/join#signin">I'm already a member — sign in</a>
+    <a class="btn btn-light full" href="/join">Join the club</a>
+  </div>
+
+  <section id="v-home" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-qr" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-wallet" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-transactions" class="view hidden stack" style="gap:6px"></section>
+  <section id="v-profile" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-inbox" class="view hidden stack" style="gap:12px"></section>
+</div>
+
+<nav class="tabs hidden" id="tabs" aria-label="Sections"><div class="in">
+  <button data-v="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button data-v="qr"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2M20 14v.01M14 20h.01M17 17h3v3h-3z"/></svg>QR Code</button>
+  <button data-v="wallet"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14.5h2"/></svg>My Wallet</button>
+  <button data-v="transactions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Transactions</button>
+  <button data-v="profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-5 8-5s6.5 1 8 5"/></svg>Profile</button>
+</div></nav>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="g-full" viewBox="0 0 48 84">
+    <path d="M10 6 C9 22 11 34 17 40 C20 43 22 44 24 44 C26 44 28 43 31 40 C37 34 39 22 38 6 Z" fill="#FFFDF8" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M10.6 20 C11 30 13 36 17 40 C20 43 22 44 24 44 C26 44 28 43 31 40 C35 36 37 30 37.4 20 Z" fill="#7E1D30"/>
+    <path d="M10.6 20 Q24 23.5 37.4 20" fill="none" stroke="#A8384D" stroke-width="1.6"/>
+    <path d="M14 10 C13.5 22 15 31 19 37" fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M24 44 V70" stroke="currentColor" stroke-width="1.6"/>
+    <ellipse cx="24" cy="74" rx="11" ry="2.6" fill="#FFFDF8" stroke="currentColor" stroke-width="1.3"/>
+  </symbol>
+  <symbol id="g-empty" viewBox="0 0 48 84">
+    <path d="M10 6 C9 22 11 34 17 40 C20 43 22 44 24 44 C26 44 28 43 31 40 C37 34 39 22 38 6 Z" fill="#FFFFFF" fill-opacity=".45" stroke="currentColor" stroke-opacity=".5" stroke-width="1.3"/>
+    <path d="M24 44 V70" stroke="currentColor" stroke-opacity=".5" stroke-width="1.6"/>
+    <ellipse cx="24" cy="74" rx="11" ry="2.6" fill="#FFFFFF" fill-opacity=".45" stroke="currentColor" stroke-opacity=".5" stroke-width="1.3"/>
+  </symbol>
+  <symbol id="b-full" viewBox="0 0 40 96">
+    <path d="M16 4 H24 V26 C24 30 33 33 33 42 V88 C33 91 31 93 28 93 H12 C9 93 7 91 7 88 V42 C7 33 16 30 16 26 Z" fill="#5C1322" stroke="#3F0C17" stroke-width="1.2"/>
+    <rect x="15.2" y="3" width="9.6" height="15" rx="1.6" fill="#C9A45C"/>
+    <path d="M15.2 15 H24.8" stroke="#A9833C" stroke-width="1.2"/>
+    <rect x="10" y="52" width="20" height="24" rx="2" fill="#FBF8F1"/>
+    <path d="M12 56 H28" stroke="#C9A45C" stroke-width=".8"/>
+    <text x="20" y="68" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="9.5" font-weight="700" fill="#7A5C25">CD</text>
+    <path d="M12 72 H28" stroke="#C9A45C" stroke-width=".8"/>
+    <path d="M10.5 44 V86" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="b-empty" viewBox="0 0 40 96">
+    <path d="M16 4 H24 V26 C24 30 33 33 33 42 V88 C33 91 31 93 28 93 H12 C9 93 7 91 7 88 V42 C7 33 16 30 16 26 Z" fill="#FFFDF8" stroke="#D9CDB5" stroke-width="1.3"/>
+    <rect x="15.2" y="3" width="9.6" height="15" rx="1.6" fill="#EFE7D8"/>
+    <rect x="10" y="52" width="20" height="24" rx="2" fill="none" stroke="#E5DACB" stroke-width=".9"/>
+    <text x="20" y="68" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="9.5" font-weight="700" fill="#D9CDB5">CD</text>
+  </symbol>
+</defs></svg>
+
+<dialog id="notifAsk"><div class="stack center" style="padding:26px 22px;align-items:center;gap:12px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7A5C25" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></div>
+  <h2 id="naTitle">Stay in the loop</h2>
+  <p id="naText" class="muted" style="font-size:15px;line-height:1.5">Get a notification when you earn cashback, your complimentary glass is ready, or we host a special event.</p>
+  <button class="btn btn-green full" id="naYes">Allow notifications</button>
+  <button class="link" id="naNo" style="color:var(--muted)">Not now</button>
+</div></dialog>
+<dialog id="upgrade"><div id="upgradeBody" class="stack center" style="padding:26px;align-items:center"></div></dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let D = null, view = 'home';
+const S = () => D.settings;
+const M = (c) => doumaMoney(c, S().currency.symbol);
+const tz = () => S().timezone || 'Asia/Beirut';
+const fd = (iso) => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: tz() }) : '—';
+const ft = (iso) => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: tz() });
+const toast = (t) => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2800); };
+const api = async (path, body) => {
+  const r = await fetch('/api' + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ m: CARD.m, t: CARD.t, ...body }) } : { cache: 'no-store' });
+  const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Something went wrong.'); return d;
+};
+
+// ---------- shared pieces ----------
+function card(m, { compact = false } = {}) {
+  return `<div class="mcard tier-${m.tier} fade" aria-label="Membership card">
+    <div class="row between" style="align-items:flex-start">
+      <span class="plaque"><img src="/logo.png" alt="Château Douma" style="height:${compact ? 30 : 40}px;width:auto"></span>
+      <span class="badge" style="background:rgba(255,255,255,.45)">${esc(m.tierName)}</span>
+    </div>
+    <div style="margin-top:${compact ? 14 : 22}px">
+      <div class="k">Available cashback</div>
+      <div class="serif" style="font-size:${compact ? 36 : 48}px;line-height:1;margin-top:2px">${M(m.available)}</div>
+      <div class="v" style="margin-top:4px;opacity:.9">Cashback rate ${m.rate}%</div>
+    </div>
+    ${m.stamps ? visitRow(m.stamps) : ''}
+    <div class="row between" style="margin-top:${compact ? 14 : 18}px;align-items:flex-end">
+      <div><div class="k">Member</div><div class="serif" style="font-size:20px">${esc(m.name)}</div></div>
+      <div class="right"><div class="k">No.</div><div class="v">#${m.id}</div></div>
+    </div>
+    ${m.status !== 'active' ? '<div class="pill" style="margin-top:10px;background:rgba(255,255,255,.6);color:#8A3B32">Membership suspended — please contact us</div>' : ''}
+  </div>`;
+}
+function progress(m) {
+  if (!m.next) return `<div class="panel stack" style="gap:6px"><div class="serif" style="font-size:20px">You are a ${esc(m.tierName)}</div><p class="muted small">You have reached our highest level. Thank you for being part of Château Douma.</p></div>`;
+  const short = m.next.name.toLowerCase().replace(/(^|[\s-])\S/g, (x) => x.toUpperCase()).replace(' Member', ' Member');
+  return `<div class="panel stack" style="gap:10px">
+    <div class="row between"><span class="label">Next level</span><span class="badge tier-${m.next.key}">${esc(m.next.name)}</span></div>
+    <div class="tbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(m.next.progress * 100)}" aria-label="Progress to ${esc(m.next.name)}"><i style="width:${(m.next.progress * 100).toFixed(1)}%"></i></div>
+    <div style="font-size:14px">You are <b>${M(m.next.remaining)}</b> away from becoming a <b>${esc(short)}</b> (${m.next.rate}% cashback).</div>
+  </div>`;
+}
+function qr() {
+  const q = qrcode(0, 'M'); q.addData(D.qrUrl); q.make();
+  return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }).replace(/fill="black"|fill="#000000"/g, 'fill="#1C1A17"');
+}
+const ICON = {
+  plus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E6B43" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  minus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A3B32" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>',
+  wine: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A5C25" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M7 3h10l-.6 6a4.4 4.4 0 0 1-8.8 0z"/><path d="M12 13.5V21M8.5 21h7"/></svg>',
+  gift: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E6B43" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M3 9h18M12 9v11M12 9c-2-4-6-4-6-1.5S10 9 12 9zm0 0c2-4 6-4 6-1.5S14 9 12 9z"/></svg>',
+  star: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A5C25" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"/></svg>',
+  clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6E675C" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+  undo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A3B32" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
+};
+function txRow(x) {
+  const lines = []; let ic = ICON.wine, title = esc(x.label || x.type), sub = ft(x.at);
+  const pos = (c, t) => lines.push(`<div class="amt pos">+${M(c)} <span style="font-weight:500">${t}</span></div>`);
+  const neg = (c, t) => lines.push(`<div class="amt neg">−${M(c)} <span style="font-weight:500">${t}</span></div>`);
+  if (x.type === 'purchase') {
+    title = esc(x.category); sub += x.invoiceRef ? ` · ${esc(x.invoiceRef)}` : '';
+    lines.push(`<div class="small muted">Invoice ${M(x.invoice)} · Paid ${M(x.paid)}</div>`);
+    if (x.redeemed) neg(x.redeemed, 'redeemed');
+    if (x.earned) pos(x.earned, 'earned');
+    if (x.campaigns?.length) lines.push(`<div class="small" style="color:var(--gold-text)">${x.campaigns.map((c) => esc(c.name)).join(', ')}</div>`);
+  } else if (x.type === 'welcome') { ic = ICON.gift; pos(x.reward, 'welcome reward'); }
+  else if (x.type === 'welcome-unlock') { ic = ICON.gift; lines.push(`<div class="amt pos">${M(x.unlocked || 0)} now usable</div>`); }
+  else if (x.type === 'birthday' || x.type === 'complimentary') { ic = ICON.gift; pos(x.reward, x.type === 'birthday' ? 'birthday reward' : 'gift'); }
+  else if (x.type === 'adjustment') { ic = x.adjust > 0 ? ICON.plus : ICON.minus; (x.adjust > 0 ? pos : neg)(Math.abs(x.adjust), 'adjustment'); }
+  else if (x.type === 'expire') { ic = ICON.clock; lines.push(`<div class="amt" style="color:var(--muted2)">−${M(x.expired)} expired</div>`); }
+  else if (x.type === 'refund' || x.type === 'reversal') { ic = ICON.undo; if (x.refund) lines.push(`<div class="small muted">Refunded ${M(x.refund)}</div>`); if (x.restored) pos(x.restored, 'cashback returned'); if (x.earnedReversed) neg(x.earnedReversed, 'cashback reversed'); if (x.adjust) (x.adjust > 0 ? pos : neg)(Math.abs(x.adjust), 'corrected'); }
+  else if (x.type === 'tier') { ic = ICON.star; title = esc(x.label); }
+  else if (x.type === 'stamp') { ic = ICON.wine; }
+  if (x.stamps?.visit) lines.push(`<div class="small muted">+1 visit glass</div>`);
+  const bal = x.balance !== undefined && x.type !== 'tier' ? `<div class="small muted" style="white-space:nowrap">Balance ${M(x.balance)}</div>` : '';
+  return `<div class="tx"><div class="ic">${ic}</div><div class="grow"><div class="row between" style="align-items:flex-start"><div style="font-weight:600;font-size:15px">${title}</div>${bal}</div><div class="small muted">${sub}</div><div class="stack" style="gap:2px;margin-top:4px">${lines.join('')}</div></div></div>`;
+}
+
+// ---------- views ----------
+const V = {
+  home() {
+    const m = D.member, s = S();
+    const stats = [['Cashback rate', `${m.rate}%`], ['Eligible spending', M(m.spend)], ['Visits', m.visits], ['Member since', fd(m.joinedAt)], ['Last visit', m.lastVisit ? fd(m.lastVisit) : '—'], ['Member no.', '#' + m.id]];
+    return `${card(m)}
+      ${progress(m)}
+      <div class="sec-title"><h2>Your membership</h2></div>
+      <div class="grid3">${stats.map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v" style="font-size:15px">${v}</div></div>`).join('')}</div>
+      <div class="sec-title"><h2>The levels</h2></div>
+      <div class="mini-tiers">${s.tiers.map((t, i) => `<div class="mcard tier-${t.key}" style="${t.key === m.tier ? 'outline:2px solid var(--green);outline-offset:2px' : ''}"><div style="font-size:9.5px;font-weight:700;letter-spacing:.8px">${esc(t.name.replace(' MEMBER', ''))}</div><div style="font-family:var(--sans);font-weight:600;font-size:22px;line-height:1.3;letter-spacing:-.3px">${t.rate}%</div><div style="font-size:10px;opacity:.85">${i === 0 ? 'from joining' : 'from ' + M(t.min)}</div>${t.key === m.tier ? '<div style="font-size:10px;font-weight:700;margin-top:2px">You</div>' : ''}</div>`).join('')}</div>
+      ${installHint()}`;
+  },
+  qr() {
+    const m = D.member;
+    return `<div class="stack center" style="align-items:center;gap:14px;padding-top:8px">
+      <div style="font-family:var(--sans);font-weight:600;font-size:22px;letter-spacing:.2px">My QR code</div>
+      <div class="qrbox" style="width:min(78vw,300px);height:min(78vw,300px);padding:16px" role="img" aria-label="Your membership QR code">${qr()}</div>
+      <div><div class="label">Member number</div><div class="serif" style="font-size:40px;letter-spacing:2px;line-height:1.1">#${m.id}</div></div>
+      <div class="serif" style="font-size:22px">${esc(m.name)}</div>
+      <span class="badge tier-${m.tier}">${esc(m.tierName)}</span>
+      <p class="muted small" style="max-width:300px">Show this QR code to a team member, or share your member number.</p>
+    </div>`;
+  },
+  wallet() {
+    const m = D.member, w = S().wallet;
+    return `<h1>My Wallet</h1>
+      <div class="panel stack center" style="align-items:center;gap:6px;padding:26px 16px">
+        <span class="label">Available cashback</span>
+        <div class="balance-big">${M(m.available)}</div>
+        <span class="badge tier-${m.tier}">${esc(m.tierName)} · ${m.rate}%</span>
+        ${m.nextExpiry ? `<span class="small muted" style="margin-top:6px">${M(m.nextExpiry.cents)} expires on ${fd(m.nextExpiry.at)}</span>` : ''}
+      </div>
+      <div class="grid2">
+        <div class="stat"><div class="k">Lifetime earned</div><div class="v pos">${M(m.lifetimeEarned)}</div></div>
+        <div class="stat"><div class="k">Lifetime redeemed</div><div class="v">${M(m.lifetimeRedeemed)}</div></div>
+        <div class="stat"><div class="k">Eligible spending</div><div class="v">${M(m.spend)}</div></div>
+        <div class="stat"><div class="k">Expired</div><div class="v" style="color:var(--muted2)">${M(m.lifetimeExpired)}</div></div>
+      </div>
+      ${m.lots.length ? `<div class="panel stack" style="gap:4px"><span class="label">Expiry schedule</span>${m.lots.slice(0, 8).map((l) => `<div class="row between small" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>${M(l.cents)} <span class="muted">${{ earn: 'cashback', welcome: 'welcome', birthday: 'birthday', complimentary: 'gift', restore: 'returned', adjust: 'adjustment' }[l.kind] || ''}</span></span><span class="muted">expires ${fd(l.expiresAt)}</span></div>`).join('')}</div>` : ''}
+      ${w.apple || w.google ? `<div class="stack" style="gap:10px">${w.apple ? `<a class="btn btn-green full" href="/api/wallet/apple/pass?m=${CARD.m}&t=${CARD.t}">Add to Apple Wallet</a>` : ''}${w.google ? `<button class="btn btn-green full" id="gw">Add to Google Wallet</button>` : ''}</div>` : ''}`;
+  },
+  transactions() {
+    const list = D.member.transactions;
+    return `<h1 style="margin-bottom:6px">Transactions</h1>${list.length ? list.map(txRow).join('') : '<p class="muted">No transactions yet. Your history appears here after your first visit.</p>'}`;
+  },
+  profile() {
+    const m = D.member, s = S();
+    const notif = 'Notification' in window ? Notification.permission : 'unsupported';
+    return `<h1>Profile</h1>
+      <div class="panel stack" style="gap:14px">
+        <div><div class="label">Name</div><div style="font-size:16px;margin-top:2px">${esc(m.name)}</div></div>
+        <div><div class="label">Phone</div><div style="font-size:16px;margin-top:2px">${fmtPhone(m.phone)}</div></div>
+        <div class="field"><label class="label" for="pDob">Date of birth</label>${m.dob ? `<div style="font-size:16px">${new Date(m.dob + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div><span class="small muted">Saved. Ask our team if it needs correcting.</span>` : `<input id="pDob" type="date" max="${new Date(Date.now() - 18 * 365.25 * 864e5).toISOString().slice(0, 10)}"><span class="small muted">You can save it once — it cannot be changed afterwards.</span>`}</div>
+        ${m.dob ? '' : '<button class="btn btn-green" id="saveProfile">Save</button>'}
+        <div id="pMsg" class="hidden"></div>
+      </div>
+      <div class="panel stack" style="gap:12px">
+        <span class="label">Sign-in PIN</span>
+        <div class="small muted">${m.hasPin ? 'Use your phone number and this PIN to open your card on another phone.' : 'Set a 4-digit PIN so you can open your card on another phone.'}</div>
+        <div class="row"><input id="np1" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN" autocomplete="new-password" style="letter-spacing:6px"><input id="np2" type="password" inputmode="numeric" maxlength="4" placeholder="Repeat" autocomplete="new-password" style="letter-spacing:6px"></div>
+        <button class="btn btn-light" id="savePin">${m.hasPin ? 'Change PIN' : 'Set PIN'}</button>
+        <div id="pinMsg" class="hidden"></div>
+      </div>
+      <div class="panel stack" style="gap:14px">
+        <span class="label">Notifications</span>
+        <div class="row between" style="gap:12px"><div><b style="font-size:15px">Phone notifications</b><div class="small muted">Cashback, rewards and important account messages.</div></div>
+          ${notif === 'granted' ? '<span class="pill" style="background:var(--pos-bg);color:var(--pos)">On</span>' : notif === 'denied' ? '<span class="small muted">Blocked in phone settings</span>' : '<button class="btn btn-light btn-sm" id="pushOn">Turn on</button>'}</div>
+        ${notif === 'unsupported' || (/iphone|ipad/i.test(navigator.userAgent) && !standalone) ? '<div class="small muted">On iPhone, add this card to your Home Screen first (Share → Add to Home Screen), then open it from there to allow notifications.</div>' : ''}
+        <div class="row between"><div><b style="font-size:15px">News & offers</b><div class="small muted">Events, tastings and campaigns. Essential account messages are always sent.</div></div>
+          <label class="switch"><input type="checkbox" id="mk" ${m.prefs.marketing ? 'checked' : ''} aria-label="News and offers"><span></span></label></div>
+      </div>
+      <div class="panel stack"><span class="label">Programme terms</span><div class="muted">${doumaTerms(s)}</div></div>
+      <button class="link" id="forget" style="align-self:center;color:var(--muted)">Remove this card from this device</button>`;
+  },
+  inbox() {
+    const seen = localStorage.getItem('douma_seen') || '';
+    return `<div class="row between"><button class="link" data-go="home">‹ Back</button></div><h1>Messages</h1>
+      ${D.inbox.length ? D.inbox.map((x) => `<div class="panel stack" style="gap:4px"><div class="row between"><span class="small" style="font-weight:700;letter-spacing:1px;color:${x.at > seen ? 'var(--gold-text)' : 'var(--muted2)'}">${x.at > seen ? '● NEW' : x.scope === 'all' ? 'ALL MEMBERS' : 'FOR YOU'}</span><span class="small muted">${ft(x.at)}</span></div><div class="serif" style="font-size:20px">${esc(x.title)}</div><div style="font-size:14px;line-height:1.5;white-space:pre-line">${esc(x.body)}</div></div>`).join('') : '<p class="muted">No messages yet.</p>'}`;
+  },
+};
+// Visit glasses on the membership card: each visit fills one glass, 5 visits = 1 complimentary glass
+function visitRow(st) {
+  const ready = st.glassRewards || 0, goal = st.goal, filled = ready ? goal : Math.min(goal, st.glasses), left = goal - st.glasses;
+  const icons = Array.from({ length: goal }, (_, i) => `<svg class="${i < filled ? 'on' : ''}" width="40" height="68" aria-hidden="true"><use href="#g-${i < filled ? 'full' : 'empty'}"/></svg>`).join('');
+  return `<div style="border-top:1px solid var(--t-line);margin-top:16px;padding-top:10px" role="group" aria-label="Visits: ${filled} of ${goal}">
+    <div class="row between" style="align-items:baseline"><span class="k">Visits · free glass</span><span class="v">${filled} / ${goal}</span></div>
+    <div class="stamprow" style="margin:10px 2px 6px">${icons}</div>
+    <div style="font-size:12px;font-weight:600">${ready ? `${ready > 1 ? ready + ' complimentary glasses' : 'Complimentary glass'} ready — show your card to our team` : `${left} more visit${left === 1 ? '' : 's'} until your complimentary glass`}</div>
+  </div>`;
+}
+const fmtPhone = (p) => p && p.startsWith('961') ? `+961 ${p.slice(3, 5)} ${p.slice(5, 8)} ${p.slice(8)}`.trim() : '+' + esc(p);
+const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+function installHint() { return standalone ? '' : `<p class="small muted center">Tip: tap Share → “Add to Home Screen” to keep your card one tap away.</p>`; }
+
+function show(v) {
+  view = v;
+  document.querySelectorAll('.view').forEach((x) => x.classList.add('hidden'));
+  const el = $('v-' + v); el.innerHTML = V[v](); el.classList.remove('hidden');
+  document.querySelectorAll('nav.tabs button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'inbox') setTimeout(() => { localStorage.setItem('douma_seen', new Date().toISOString()); $('dot').classList.add('hidden'); }, 400);
+  bind();
+}
+function bind() {
+  document.querySelectorAll('[data-go]').forEach((b) => b.onclick = () => { show(b.dataset.go); scrollTo(0, 0); });
+  const gw = $('gw'); if (gw) gw.onclick = async () => { try { const d = await api(`/wallet/google?m=${CARD.m}&t=${CARD.t}`); location.href = d.url; } catch (e) { toast(e.message); } };
+  const sp = $('saveProfile');
+  if (sp) sp.onclick = async () => {
+    const body = {};
+    if ($('pDob')?.value) body.dob = $('pDob').value; else return;
+    try { const d = await api('/me/profile', body); D.member = d.member; toast('Saved'); show('profile'); }
+    catch (e) { $('pMsg').className = 'error'; $('pMsg').textContent = e.message; }
+  };
+  const mk = $('mk'); if (mk) mk.onchange = async () => { try { const d = await api('/me/profile', { prefs: { marketing: mk.checked } }); D.member = d.member; toast(mk.checked ? 'You will receive news & offers' : 'News & offers turned off'); } catch (e) { toast(e.message); } };
+  const po = $('pushOn'); if (po) po.onclick = async () => { await enablePush(true); show('profile'); };
+  const sp2 = $('savePin');
+  if (sp2) sp2.onclick = async () => {
+    const a1 = $('np1').value, a2 = $('np2').value;
+    const msg = (t, ok) => { $('pinMsg').className = ok ? 'ok' : 'error'; $('pinMsg').textContent = t; };
+    if (!/^\d{4}$/.test(a1)) return msg('Your PIN must be 4 digits.');
+    if (a1 !== a2) return msg('The two PINs don\u2019t match.');
+    try { const d = await api('/me/profile', { newPin: a1 }); D.member = d.member; $('np1').value = ''; $('np2').value = ''; msg('PIN saved.', true); }
+    catch (e) { msg(e.message); }
+  };
+  const fg = $('forget'); if (fg) fg.onclick = () => { localStorage.removeItem('douma_card'); location.href = '/join'; };
+}
+
+// ---------- data ----------
+async function load(first) {
+  if (!window.CARD) { $('loading').classList.add('hidden'); $('nocard').classList.remove('hidden'); return; }
+  try {
+    const r = await fetch(`/api/me?m=${encodeURIComponent(CARD.m)}&t=${encodeURIComponent(CARD.t)}`, { cache: 'no-store' });
+    if (r.status === 404) { $('loading').classList.add('hidden'); $('nocard').classList.remove('hidden'); return; }
+    const d = await r.json(); if (!r.ok) throw new Error(d.error);
+    const prev = D?.member;
+    D = d;
+    localStorage.setItem('douma_card', JSON.stringify(CARD));
+    $('loading').classList.add('hidden'); $('tabs').classList.remove('hidden');
+    const seen = localStorage.getItem('douma_seen') || '';
+    $('dot').classList.toggle('hidden', !D.inbox.some((x) => x.at > seen));
+    // re-render only if something changed (keeps forms intact while typing)
+    const sig = JSON.stringify([D.member.available, D.member.tier, D.member.transactions[0]?.id, D.inbox[0]?.id, D.member.prefs, D.member.dob, D.member.verified]);
+    if (first || sig !== window.__sig) { if (!(view === 'profile' && !first && document.activeElement?.tagName === 'INPUT')) show(view); }
+    if (prev && D.member.available > prev.available) toast(`+${M(D.member.available - prev.available)} cashback added`);
+    window.__sig = sig;
+    celebrate();
+    if (first) { enablePush(false); setTimeout(askNotifications, 1200); }
+  } catch (e) { /* offline: keep showing the last card */ }
+}
+function celebrate() {
+  const m = D.member, last = localStorage.getItem('douma_tier_' + m.id);
+  const idx = (k) => S().tiers.findIndex((t) => t.key === k);
+  if (last && idx(m.tier) > idx(last)) {
+    $('upgradeBody').innerHTML = `<span class="eyebrow">Membership upgraded</span><h2>Welcome to ${esc(m.tierName)}</h2>${card(m, { compact: true })}<p class="muted">From now on you earn <b>${m.rate}%</b> cashback on every eligible purchase.</p><button class="btn btn-green full" onclick="document.getElementById('upgrade').close()">Wonderful</button>`;
+    $('upgrade').showModal();
+  }
+  localStorage.setItem('douma_tier_' + m.id, m.tier);
+}
+
+// ---------- push ----------
+let swReg = null;
+function b64ToBytes(b) { const p = '='.repeat((4 - b.length % 4) % 4); const s = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, (c) => c.charCodeAt(0)); }
+async function enablePush(ask) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+  swReg = swReg || await navigator.serviceWorker.register('/sw.js').catch(() => null);
+  if (!swReg) return;
+  if (Notification.permission === 'default' && ask) await Notification.requestPermission();
+  if (Notification.permission !== 'granted') return;
+  try {
+    let sub = await swReg.pushManager.getSubscription();
+    if (!sub) sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(D.vapidPublicKey) });
+    await api('/subscribe', { subscription: sub.toJSON() });
+  } catch (e) { console.warn(e); }
+}
+
+// ---------- ask for notifications as soon as the card opens ----------
+function askNotifications() {
+  const snooze = +localStorage.getItem('douma_notif_snooze') || 0;
+  if (Date.now() < snooze || $('upgrade').open) return;
+  const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const canPush = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+  if (canPush && Notification.permission !== 'default') return; // already answered
+  if (!canPush && !(iOS && !standalone)) return;               // browser can't do notifications at all
+  if (!canPush) {
+    // iPhone in Safari: notifications only work from the Home Screen app
+    $('naTitle').textContent = 'Get notifications';
+    $('naText').textContent = 'On iPhone, tap Share \u2192 “Add to Home Screen”, then open Loyalty Club from your Home Screen to turn on notifications.';
+    $('naYes').textContent = 'Got it';
+    $('naYes').onclick = () => { localStorage.setItem('douma_notif_snooze', Date.now() + 7 * 864e5); $('notifAsk').close(); };
+  } else {
+    $('naYes').onclick = async () => { $('notifAsk').close(); await enablePush(true); if (Notification.permission === 'granted') toast('Notifications are on'); if (view === 'profile') show('profile'); };
+  }
+  $('naNo').onclick = () => { localStorage.setItem('douma_notif_snooze', Date.now() + 3 * 864e5); $('notifAsk').close(); };
+  $('notifAsk').showModal();
+}
+
+document.querySelectorAll('nav.tabs button').forEach((b) => b.onclick = () => { show(b.dataset.v); scrollTo(0, 0); });
+$('bell').onclick = () => { if (D) { show('inbox'); scrollTo(0, 0); } };
+load(true);
+setInterval(() => { if (document.visibilityState === 'visible') load(false); }, 12000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(false); });
+navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data === 'refresh') load(false); });
+</script>
+</body>
+</html>
