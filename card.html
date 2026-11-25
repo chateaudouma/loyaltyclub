@@ -232,12 +232,12 @@ const V = {
   qr() {
     const m = D.member;
     return `<div class="stack center" style="align-items:center;gap:14px;padding-top:8px">
-      <h1>My QR code</h1>
+      <div style="font-family:var(--sans);font-weight:600;font-size:22px;letter-spacing:.2px">My QR code</div>
       <div class="qrbox" style="width:min(78vw,300px);height:min(78vw,300px);padding:16px" role="img" aria-label="Your membership QR code">${qr()}</div>
       <div><div class="label">Member number</div><div class="serif" style="font-size:40px;letter-spacing:2px;line-height:1.1">#${m.id}</div></div>
       <div class="serif" style="font-size:22px">${esc(m.name)}</div>
       <span class="badge tier-${m.tier}">${esc(m.tierName)}</span>
-      <p class="muted small" style="max-width:300px">Show this code at the bar, or tell our team your member number.</p>
+      <p class="muted small" style="max-width:300px">Show this QR code to a team member, or share your member number.</p>
     </div>`;
   },
   wallet() {
