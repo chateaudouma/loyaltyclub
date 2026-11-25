@@ -41,21 +41,16 @@
   </div>
 
   <section id="signin" class="hidden stack" style="gap:14px">
-    <div class="stack" style="gap:6px"><h1>Welcome back</h1><p class="muted" style="font-size:15px">Open your card on this phone with the number you joined with.</p></div>
+    <div class="stack" style="gap:6px"><h1>Welcome back</h1><p class="muted" style="font-size:15px">Open your card on this phone with your number and PIN.</p></div>
     <form id="sf" novalidate class="stack" style="gap:14px">
       <div class="field"><label class="label" for="sphone">Phone number</label>
         <div class="row"><input id="scc" aria-label="Country code" value="+961" inputmode="tel" style="width:86px;flex:none;text-align:center"><input id="sphone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="71 234 567"></div></div>
+      <div class="field"><label class="label" for="spin">Your 4-digit PIN</label>
+        <input id="spin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="••••" style="letter-spacing:8px;font-size:22px"></div>
       <div id="serr" class="error hidden" role="alert"></div>
-      <button id="sgo" class="btn btn-green full" type="submit">Continue</button>
+      <button id="sgo" class="btn btn-green full" type="submit">Open my card</button>
     </form>
-    <div id="scode" class="hidden stack center" style="align-items:center;gap:12px">
-      <span class="label">Your sign-in code</span>
-      <div id="codeBig" class="serif" style="font-size:54px;letter-spacing:8px;line-height:1"></div>
-      <p style="font-size:15px;line-height:1.5;max-width:320px">Show this code to our team. Your card opens here automatically as soon as they confirm it.</p>
-      <div class="row small muted"><div class="spinner" style="width:16px;height:16px;border-width:2px"></div><span id="swait">Waiting for confirmation…</span></div>
-      <button class="link" id="sagain">Use a different number</button>
-    </div>
-    <p class="small muted center">Not at Château Douma right now? Message us and we will send your card link on WhatsApp.</p>
+    <p class="small muted center">Forgot your PIN? Ask our team to send your card link on WhatsApp, then set a new PIN in Profile.</p>
   </section>
 
   <section id="joinBox" class="stack" style="gap:16px">
@@ -76,6 +71,11 @@
       <label class="label" for="dob">Date of birth <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">(optional, for your birthday reward)</span></label>
       <input id="dob" type="date" autocomplete="bday">
       <span class="small muted">Saved once — it cannot be changed later.</span>
+    </div>
+    <div class="field">
+      <label class="label" for="pin">Choose a 4-digit PIN</label>
+      <input id="pin" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="new-password" placeholder="••••" style="letter-spacing:8px;font-size:22px">
+      <span class="small muted">You'll use it with your phone number to open your card on another phone.</span>
     </div>
     <label class="row" style="align-items:flex-start;font-size:14px"><input id="adult" type="checkbox"><span>I am 18 years old or older.</span></label>
     <label class="row" style="align-items:flex-start;font-size:14px"><input id="consent" type="checkbox"><span>I accept the <button type="button" class="link" id="openTerms" style="padding:0;font-size:14px">loyalty programme terms</button> and agree that Château Douma stores my details for the club.</span></label>
@@ -110,34 +110,22 @@ function tab(which) {
   const sign = which === 'signin';
   $('signin').classList.toggle('hidden', !sign); $('joinBox').classList.toggle('hidden', sign);
   $('tabSign').classList.toggle('on', sign); $('tabJoin').classList.toggle('on', !sign);
-  if (sign) setTimeout(() => $('sphone').focus(), 50);
+  if (sign) setTimeout(() => ($('sphone').value ? $('spin') : $('sphone')).focus(), 50);
 }
 $('tabJoin').onclick = () => { history.replaceState(null, '', '#join'); tab('join'); };
 $('tabSign').onclick = () => { history.replaceState(null, '', '#signin'); tab('signin'); };
 if (location.hash === '#signin') tab('signin');
-let pollTimer = null;
 $('sf').addEventListener('submit', async (e) => {
   e.preventDefault(); $('serr').classList.add('hidden');
   const phone = '+' + $('scc').value.replace(/\D/g, '') + $('sphone').value.replace(/\D/g, '').replace(/^0+/, '');
   $('sgo').disabled = true;
   try {
-    const r = await fetch('/api/login/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ phone }) });
+    const r = await fetch('/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ phone, pin: $('spin').value }) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Something went wrong.');
-    $('codeBig').textContent = d.code; $('sf').classList.add('hidden'); $('scode').classList.remove('hidden');
-    const until = Date.now() + d.expiresInMinutes * 60e3;
-    clearInterval(pollTimer);
-    pollTimer = setInterval(async () => {
-      if (Date.now() > until) { clearInterval(pollTimer); $('swait').textContent = 'This code expired. Tap "Use a different number" to get a new one.'; return; }
-      try {
-        const p = await (await fetch(`/api/login/poll?r=${d.req}&s=${d.secret}`, { cache: 'no-store' })).json();
-        if (p.status === 'ok') { clearInterval(pollTimer); localStorage.setItem('douma_card', JSON.stringify({ m: p.m, t: p.t })); location.href = `/card?m=${p.m}&t=${p.t}`; }
-        if (p.status === 'expired') { clearInterval(pollTimer); $('swait').textContent = 'This code expired. Please try again.'; }
-      } catch (_) {}
-    }, 3000);
-  } catch (ex) { $('serr').textContent = ex.message; $('serr').classList.remove('hidden'); }
-  $('sgo').disabled = false;
+    localStorage.setItem('douma_card', JSON.stringify({ m: d.m, t: d.t }));
+    location.href = `/card?m=${d.m}&t=${d.t}`;
+  } catch (ex) { $('serr').textContent = ex.message; $('serr').classList.remove('hidden'); $('sgo').disabled = false; }
 });
-$('sagain').onclick = () => { clearInterval(pollTimer); $('scode').classList.add('hidden'); $('sf').classList.remove('hidden'); };
 $('openTerms').onclick = () => $('terms').showModal();
 $('dob').max = new Date(Date.now() - 18 * 365.25 * 864e5).toISOString().slice(0, 10);
 $('f').addEventListener('submit', async (e) => {
@@ -148,10 +136,10 @@ $('f').addEventListener('submit', async (e) => {
     const cc = $('cc').value.replace(/\D/g, '');
     const local = $('phone').value.replace(/\D/g, '').replace(/^0+/, '');
     const r = await fetch('/api/join', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
-      name: $('name').value, phone: '+' + cc + local, dob: $('dob').value,
+      name: $('name').value, phone: '+' + cc + local, dob: $('dob').value, pin: $('pin').value,
       adult: $('adult').checked, consent: $('consent').checked, marketing: $('marketing').checked }) });
     const d = await r.json();
-    if (r.status === 409) { $('sphone').value = $('phone').value; $('scc').value = $('cc').value; tab('signin'); $('sgo').click(); return; }
+    if (r.status === 409) { $('sphone').value = $('phone').value; $('scc').value = $('cc').value; tab('signin'); $('serr').textContent = 'This number already has a card. Enter your PIN to open it.'; $('serr').classList.remove('hidden'); $('spin').focus(); $('go').disabled = false; $('go').textContent = 'Create my card'; return; }
     if (!r.ok) throw new Error(d.error || 'Something went wrong.');
     localStorage.setItem('douma_card', JSON.stringify({ m: d.id, t: d.token }));
     location.href = `/card?m=${d.id}&t=${d.token}&new=1`;

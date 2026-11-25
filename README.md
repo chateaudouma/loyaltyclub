@@ -97,13 +97,10 @@ Once that's done, customers see **Add to Apple Wallet** in My Wallet. The pass u
 ### Phone notifications
 These work with no setup. On iPhone, the customer must add the card to their Home Screen and allow notifications. Every message also appears in the inbox on the card.
 
-## Signing in on a new phone
-Members don't need a password.
-1. On the join page, the member taps **I'm already a member** and enters their phone number. A 6-digit code appears on their screen.
-2. A staff member opens that member, checks it is really them and types the code under **Sign-in request**.
-3. The card opens on the customer's phone automatically.
-
-If the customer isn't at Château Douma, staff can tap **Send card link (WhatsApp)** on the member's screen instead.
+## Signing in on another phone
+Members choose a **4-digit PIN** when they join. On a new phone they tap **I'm already a member** and enter their phone number and PIN, and their card opens. No staff are needed.
+- After 5 wrong PINs, sign-in for that card is locked for 15 minutes.
+- **Forgot the PIN?** Staff open the member and tap **Send card link (WhatsApp)**. The customer opens the link and sets a new PIN in **Profile**.
 
 ## Data storage
 

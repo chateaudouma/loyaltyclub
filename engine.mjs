@@ -475,7 +475,7 @@ export function customerView(m, s, now) {
     available: b.available, locked: b.locked, nextExpiry: b.nextExpiry, lots: b.lots,
     lifetimeEarned: m.totals.earned + m.totals.welcome - lockedWelcome(m) + m.totals.birthday + m.totals.complimentary + Math.max(0, m.totals.adjustments),
     lifetimeRedeemed: m.totals.redeemed, lifetimeExpired: m.totals.expired, spend: m.spend, visits: m.visits,
-    stamps: s.stamps.enabled ? { ...m.stamps, goal: s.stamps.goal } : null, prefs: m.prefs, qr: m.qr,
+    stamps: s.stamps.enabled ? { ...m.stamps, goal: s.stamps.goal } : null, prefs: m.prefs, qr: m.qr, hasPin: !!m.pin,
     transactions: m.ledger.slice(-100).reverse().map(publicTx),
   };
 }

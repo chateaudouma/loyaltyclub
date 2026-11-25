@@ -236,7 +236,6 @@ async function findMembers(ctx, q) {
 // Staff see only what they need; the owner sees everything.
 function sv(m, s, now, by) {
   const v = E.staffView(m, s, now, by.role === 'owner' || by.perms.history);
-  v.pendingSignIn = (m.logins || []).some((l) => !l.approved && l.exp > now);
   if (by.role !== 'owner') { v.phone = m.phone ? '…' + m.phone.slice(-3) : ''; v.email = m.email ? m.email.replace(/^(.).*(@.*)$/, '$1•••$2') : ''; v.dob = m.dob ? '••' + m.dob.slice(4) : ''; delete v.notes; delete v.totals; }
   return v;
 }
@@ -334,6 +333,9 @@ export async function handle(req, store, env = {}) {
       }
       need(b.adult === true, 'Please confirm you are 18 or older.');
       need(b.consent === true, 'Please accept the terms to join.');
+      const pin = String(b.pin || '');
+      need(/^\d{4}$/.test(pin), 'Choose a 4-digit PIN to protect your card.');
+      need(!/^(\d)\1{3}$/.test(pin) && !['1234', '4321', '0123', '9876'].includes(pin), 'That PIN is too easy to guess. Choose another 4 digits.');
       const exists = 'This phone number already has a card. Tap "Sign in" to open it on this phone.';
       need(!(await store.getJSON(`phones/${phone}`)), exists, 409);
       if (email) need(!(await store.getJSON(`emails/${sha(email)}`)), 'This email already has a card.', 409);
@@ -345,6 +347,7 @@ export async function handle(req, store, env = {}) {
         need(p.modified, exists, 409); claims.push(`phones/${phone}`);
         if (email) { const e = await store.setJSON(`emails/${sha(email)}`, { id }, { onlyIfNew: true }); need(e.modified, 'This email already has a card.', 409); claims.push(`emails/${sha(email)}`); }
         const { m, notes, events } = E.newMember({ id, name, phone, email, dob, marketing: !!b.marketing }, s, ctx.now);
+        m.pin = hashPin(pin);
         for (const n of notes) m.inbox.push({ id: rid(6), at: ctx.now, type: n.type, essential: n.essential, title: n.title, body: n.body });
         await store.setJSON(`qr/${m.qr}`, { id }, { onlyIfNew: true }); claims.push(`qr/${m.qr}`);
         const w = await store.setJSON(`members/${id}`, m, { onlyIfNew: true });
@@ -384,42 +387,38 @@ export async function handle(req, store, env = {}) {
           m.dob = b.dob; m.dobSetAt = ctx.now;
         } else if (b.dob && m.dob && b.dob !== m.dob) throw new HttpError('Your birthday is already saved. Please ask our team to correct it.', 400);
         if (b.prefs && typeof b.prefs.marketing === 'boolean') m.prefs.marketing = b.prefs.marketing;
+        if (b.newPin !== undefined) {
+          const np = String(b.newPin);
+          need(/^\d{4}$/.test(np), 'Your PIN must be 4 digits.');
+          need(!/^(\d)\1{3}$/.test(np) && !['1234', '4321', '0123', '9876'].includes(np), 'That PIN is too easy to guess. Choose another 4 digits.');
+          m.pin = hashPin(np); m.pinFails = 0; m.pinLockUntil = null;
+        }
         return { touch: true, notes: [], events: [] };
       }, { action: 'member.profile', by: { id: m0.id, name: 'Customer', role: 'customer' }, quiet: true });
       return json({ member: E.customerView(r.m, s, ctx.now) });
     }
 
-    // ---- sign in on a new phone: the customer shows a code, a staff member confirms it in person ----
-    if (path === '/login/start' && method === 'POST') {
+    // ---- sign in on another phone with phone number + the member's own 4-digit PIN ----
+    if (path === '/login' && method === 'POST') {
       const b = await body(req);
-      const gate = await rateGate(ctx, 'login', 8, 60); await gate.fail();
-      const phone = normPhone(b.phone);
-      need(phone.length >= 8 && phone.length <= 15, 'Please enter the phone number you joined with.');
-      const id = rid(9), secret = rid(18), code = String(crypto.randomInt(100000, 1000000));
+      const gate = await rateGate(ctx, 'login', 10, 15);
+      const phone = normPhone(b.phone), pin = String(b.pin || '');
+      need(phone.length >= 8 && phone.length <= 15, 'Enter the phone number you joined with.');
+      need(/^\d{4}$/.test(pin), 'Enter your 4-digit PIN.');
+      const bad = 'Phone number or PIN is not right.';
       const ref = (await store.getJSON(`phones/${phone}`))?.data;
-      if (ref) {
-        await mutate(ctx, ref.id, (m) => {
-          m.logins = (m.logins || []).filter((l) => l.exp > ctx.now).slice(-3);
-          m.logins.push({ id, code, secret: sha(secret), exp: addDays(ctx.now, 1 / 96), approved: false });
-          return { touch: true };
-        }, { quiet: true });
+      if (!ref) { await gate.fail(); return fail(bad, 401); }
+      let m = await loadMember(ctx, ref.id);
+      if (!m) { await gate.fail(); return fail(bad, 401); }
+      if (!m.pin) return fail('Your card has no PIN yet. Ask our team to send you your card link on WhatsApp, then set a PIN in Profile.', 403);
+      if (m.pinLockUntil && m.pinLockUntil > ctx.now) return fail('Too many wrong PINs. Try again in 15 minutes, or ask our team to send your card link.', 429);
+      if (!checkPin(pin, m.pin)) {
+        await gate.fail();
+        await mutate(ctx, m.id, (x) => { x.pinFails = (x.pinFails || 0) + 1; if (x.pinFails >= 5) { x.pinFails = 0; x.pinLockUntil = addDays(ctx.now, 1 / 96); } return { touch: true }; }, { quiet: true });
+        return fail(bad, 401);
       }
-      await store.setJSON(`logins/${id}`, { m: ref?.id || null, exp: addDays(ctx.now, 1 / 96) });
-      // same answer whether or not the number exists, so nobody can test numbers
-      return json({ req: id, secret, code, expiresInMinutes: 15 });
-    }
-    if (path === '/login/poll' && method === 'GET') {
-      const r = q.get('r') || '', sec = q.get('s') || '';
-      const ref = /^[\w-]{8,20}$/.test(r) ? (await store.getJSON(`logins/${r}`))?.data : null;
-      if (!ref || ref.exp < ctx.now) return json({ status: 'expired' });
-      if (!ref.m) return json({ status: 'pending' });
-      const m = await loadMember(ctx, ref.m);
-      const l = m?.logins?.find((x) => x.id === r);
-      if (!l || l.exp < ctx.now) return json({ status: 'expired' });
-      if (!l.approved || !safeEq(l.secret, sha(sec))) return json({ status: 'pending' });
-      await mutate(ctx, m.id, (x) => { x.logins = (x.logins || []).filter((y) => y.id !== r); return { touch: true }; }, { quiet: true });
-      await store.del(`logins/${r}`).catch(() => {});
-      return json({ status: 'ok', m: m.id, t: m.token });
+      if (m.pinFails) await mutate(ctx, m.id, (x) => { x.pinFails = 0; return { touch: true }; }, { quiet: true });
+      return json({ m: m.id, t: m.token });
     }
 
     if (path === '/subscribe' && method === 'POST') {
@@ -583,17 +582,6 @@ export async function handle(req, store, env = {}) {
         const r = await mutate(ctx, b.memberId, (m) => { m.verifyCode = { kind: 'phone', hash: sha(code + m.id), exp: addDays(ctx.now, 1 / 96) }; return { touch: true }; }, { quiet: true });
         const text = `Château Douma: your verification code is ${code}`;
         return json({ whatsapp: `https://wa.me/${r.m.phone}?text=${encodeURIComponent(text)}`, sms: `sms:+${r.m.phone}?&body=${encodeURIComponent(text)}` });
-      }
-      if (path === '/staff/login-approve' && method === 'POST') {
-        const code = String(b.code || '').replace(/\D/g, '');
-        need(code.length === 6, 'Enter the 6-digit code shown on the customer\u2019s phone.');
-        const r = await mutate(ctx, b.memberId, (m) => {
-          const l = (m.logins || []).find((x) => !x.approved && x.exp > ctx.now && safeEq(x.code, code));
-          need(l, 'That code does not match a sign-in request for this member, or it expired. Ask the customer to try again.');
-          l.approved = true;
-          return { touch: true };
-        }, { by, action: 'member.signin-approved', quiet: true });
-        return json({ ok: true, member: sv(r.m, s, ctx.now, by) });
       }
       if (path === '/staff/card-link' && method === 'POST') {
         // re-send a lost card to the member's own WhatsApp number

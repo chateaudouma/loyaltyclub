@@ -22,7 +22,7 @@ const money = (c) => c / 100;
 
 console.log('\nChâteau Douma Loyalty Club — test run\n');
 let owner, staff, A, B, C;
-const join = (name, phone, extra = {}) => call('POST', '/join', { name, phone, adult: true, consent: true, marketing: true, ...extra });
+const join = (name, phone, extra = {}) => call('POST', '/join', { name, phone, adult: true, consent: true, marketing: true, pin: '2580', ...extra });
 const me = (x) => call('GET', `/me?m=${x.id}&t=${x.token}`);
 const buy = (id, invoice, extra = {}, tok = staff) => call('POST', '/staff/purchase', { memberId: id, invoice, category: 'Wine bottles', invoiceRef: 'INV-' + crypto.randomUUID().slice(0, 8), txKey: crypto.randomUUID(), ...extra }, tok);
 
@@ -37,21 +37,25 @@ await t('Duplicate phone number cannot register again (no second welcome reward)
   const r = await join('Michelle Again', '71234567');
   assert.equal(r.status, 409); assert.match(r.data.error, /Sign in/);
 });
-await t('Existing member signs in on a new phone: code shown on screen, confirmed by staff', async () => {
-  const st = (await call('POST', '/login/start', { phone: '+961 71 234 567' })).data;
-  assert.match(st.code, /^\d{6}$/);
-  assert.equal((await call('GET', `/login/poll?r=${st.req}&s=${st.secret}`)).data.status, 'pending');
-  const ghost = (await call('POST', '/login/start', { phone: '+961 76 123 123' })).data; // unknown number looks the same
-  assert.match(ghost.code, /^\d{6}$/);
-  owner = (await call('POST', '/auth/login', { pin: '730551' })).data.token;
-  const mem = (await call('GET', '/staff/member?id=CD1001', null, owner)).data.member;
-  assert.equal(mem.pendingSignIn, true);
-  assert.equal((await call('POST', '/staff/login-approve', { memberId: 'CD1001', code: '000000' }, owner)).status, 400);
-  assert.equal((await call('POST', '/staff/login-approve', { memberId: 'CD1001', code: st.code }, owner)).status, 200);
-  assert.equal((await call('GET', `/login/poll?r=${st.req}&s=wrongsecret12345`)).data.status, 'pending', 'only the phone that asked can collect');
-  const ok = (await call('GET', `/login/poll?r=${st.req}&s=${st.secret}`)).data;
-  assert.equal(ok.status, 'ok'); assert.equal(ok.m, 'CD1001'); assert.equal(ok.t, A.token);
-  assert.equal((await call('GET', `/login/poll?r=${st.req}&s=${st.secret}`)).data.status, 'expired', 'one-time use');
+await t('A 4-digit PIN is required at sign-up, and easy PINs are refused', async () => {
+  assert.equal((await join('No Pin', '76 222 333', { pin: '' })).status, 400);
+  assert.equal((await join('Weak Pin', '76 222 333', { pin: '1111' })).status, 400);
+  assert.equal((await join('Weak Pin', '76 222 333', { pin: '1234' })).status, 400);
+});
+await t('Existing member signs in on another phone with phone number + PIN (no staff needed)', async () => {
+  assert.equal((await call('POST', '/login', { phone: '+961 71 234 567', pin: '9999' })).status, 401);
+  assert.equal((await call('POST', '/login', { phone: '+961 76 123 123', pin: '2580' })).status, 401, 'unknown number gives the same answer');
+  const ok = await call('POST', '/login', { phone: '+961 71 234 567', pin: '2580' });
+  assert.equal(ok.status, 200); assert.equal(ok.data.m, 'CD1001'); assert.equal(ok.data.t, A.token);
+});
+await t('Five wrong PINs lock sign-in for that card for 15 minutes', async () => {
+  for (let i = 0; i < 5; i++) await call('POST', '/login', { phone: '03 111 222', pin: '0001' });
+  assert.equal((await call('POST', '/login', { phone: '03 111 222', pin: '2580' })).status, 429);
+});
+await t('Member can change their PIN from Profile', async () => {
+  assert.equal((await call('POST', '/me/profile', { m: C.id, t: C.token, newPin: '7391' })).status, 200);
+  assert.equal((await call('POST', '/login', { phone: '70 555 444', pin: '2580' })).status, 401);
+  assert.equal((await call('POST', '/login', { phone: '70 555 444', pin: '7391' })).status, 200);
 });
 await t('Under-18 date of birth is refused', async () => {
   const r = await join('Young', '76 999 999', { dob: '2012-01-01' }); assert.equal(r.status, 400);

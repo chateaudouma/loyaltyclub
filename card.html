@@ -269,6 +269,13 @@ const V = {
         ${m.dob ? '' : '<button class="btn btn-green" id="saveProfile">Save</button>'}
         <div id="pMsg" class="hidden"></div>
       </div>
+      <div class="panel stack" style="gap:12px">
+        <span class="label">Sign-in PIN</span>
+        <div class="small muted">${m.hasPin ? 'Use your phone number and this PIN to open your card on another phone.' : 'Set a 4-digit PIN so you can open your card on another phone.'}</div>
+        <div class="row"><input id="np1" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN" autocomplete="new-password" style="letter-spacing:6px"><input id="np2" type="password" inputmode="numeric" maxlength="4" placeholder="Repeat" autocomplete="new-password" style="letter-spacing:6px"></div>
+        <button class="btn btn-light" id="savePin">${m.hasPin ? 'Change PIN' : 'Set PIN'}</button>
+        <div id="pinMsg" class="hidden"></div>
+      </div>
       <div class="panel stack" style="gap:14px">
         <span class="label">Notifications</span>
         <div class="row between" style="gap:12px"><div><b style="font-size:15px">Phone notifications</b><div class="small muted">Cashback, rewards and important account messages.</div></div>
@@ -324,6 +331,15 @@ function bind() {
   };
   const mk = $('mk'); if (mk) mk.onchange = async () => { try { const d = await api('/me/profile', { prefs: { marketing: mk.checked } }); D.member = d.member; toast(mk.checked ? 'You will receive news & offers' : 'News & offers turned off'); } catch (e) { toast(e.message); } };
   const po = $('pushOn'); if (po) po.onclick = async () => { await enablePush(true); show('profile'); };
+  const sp2 = $('savePin');
+  if (sp2) sp2.onclick = async () => {
+    const a1 = $('np1').value, a2 = $('np2').value;
+    const msg = (t, ok) => { $('pinMsg').className = ok ? 'ok' : 'error'; $('pinMsg').textContent = t; };
+    if (!/^\d{4}$/.test(a1)) return msg('Your PIN must be 4 digits.');
+    if (a1 !== a2) return msg('The two PINs don\u2019t match.');
+    try { const d = await api('/me/profile', { newPin: a1 }); D.member = d.member; $('np1').value = ''; $('np2').value = ''; msg('PIN saved.', true); }
+    catch (e) { msg(e.message); }
+  };
   const fg = $('forget'); if (fg) fg.onclick = () => { localStorage.removeItem('douma_card'); location.href = '/join'; };
 }
 
