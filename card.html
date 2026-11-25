@@ -6,7 +6,7 @@
 <title>My card — Château Douma Loyalty Club</title>
 <meta name="theme-color" content="#F6F1E7">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Loyalty Club">
+<meta name="apple-mobile-web-app-title" content="Château Douma">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,6 +134,14 @@
   </symbol>
 </defs></svg>
 
+<dialog id="notifAsk"><div class="stack center" style="padding:26px 22px;align-items:center;gap:12px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7A5C25" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></div>
+  <h2 id="naTitle">Stay in the loop</h2>
+  <p id="naText" class="muted" style="font-size:15px;line-height:1.5">Get a notification when you earn cashback, your complimentary glass is ready, or we host a special event.</p>
+  <button class="btn btn-green full" id="naYes">Allow notifications</button>
+  <button class="link" id="naNo" style="color:var(--muted)">Not now</button>
+</div></dialog>
 <dialog id="upgrade"><div id="upgradeBody" class="stack center" style="padding:26px;align-items:center"></div></dialog>
 
 <script>
@@ -198,7 +206,7 @@ function txRow(x) {
   const pos = (c, t) => lines.push(`<div class="amt pos">+${M(c)} <span style="font-weight:500">${t}</span></div>`);
   const neg = (c, t) => lines.push(`<div class="amt neg">−${M(c)} <span style="font-weight:500">${t}</span></div>`);
   if (x.type === 'purchase') {
-    title = esc(x.category); sub += x.invoiceRef ? ` · ${esc(x.invoiceRef)}` : '';
+    title = esc(x.category); sub += x.invoiceRef && !/^P-/.test(x.invoiceRef) ? ` · ${esc(x.invoiceRef)}` : '';
     lines.push(`<div class="small muted">Invoice ${M(x.invoice)} · Paid ${M(x.paid)}</div>`);
     if (x.redeemed) neg(x.redeemed, 'redeemed');
     if (x.earned) pos(x.earned, 'earned');
@@ -362,7 +370,7 @@ async function load(first) {
     if (prev && D.member.available > prev.available) toast(`+${M(D.member.available - prev.available)} cashback added`);
     window.__sig = sig;
     celebrate();
-    if (first) enablePush(false);
+    if (first) { enablePush(false); setTimeout(askNotifications, 1200); }
   } catch (e) { /* offline: keep showing the last card */ }
 }
 function celebrate() {
@@ -389,6 +397,27 @@ async function enablePush(ask) {
     if (!sub) sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(D.vapidPublicKey) });
     await api('/subscribe', { subscription: sub.toJSON() });
   } catch (e) { console.warn(e); }
+}
+
+// ---------- ask for notifications as soon as the card opens ----------
+function askNotifications() {
+  const snooze = +localStorage.getItem('douma_notif_snooze') || 0;
+  if (Date.now() < snooze || $('upgrade').open) return;
+  const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const canPush = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+  if (canPush && Notification.permission !== 'default') return; // already answered
+  if (!canPush && !(iOS && !standalone)) return;               // browser can't do notifications at all
+  if (!canPush) {
+    // iPhone in Safari: notifications only work from the Home Screen app
+    $('naTitle').textContent = 'Get notifications';
+    $('naText').textContent = 'On iPhone, tap Share \u2192 “Add to Home Screen”, then open Château Douma from your Home Screen to turn on notifications.';
+    $('naYes').textContent = 'Got it';
+    $('naYes').onclick = () => { localStorage.setItem('douma_notif_snooze', Date.now() + 7 * 864e5); $('notifAsk').close(); };
+  } else {
+    $('naYes').onclick = async () => { $('notifAsk').close(); await enablePush(true); if (Notification.permission === 'granted') toast('Notifications are on'); if (view === 'profile') show('profile'); };
+  }
+  $('naNo').onclick = () => { localStorage.setItem('douma_notif_snooze', Date.now() + 3 * 864e5); $('notifAsk').close(); };
+  $('notifAsk').showModal();
 }
 
 document.querySelectorAll('nav.tabs button').forEach((b) => b.onclick = () => { show(b.dataset.v); scrollTo(0, 0); });

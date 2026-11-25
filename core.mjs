@@ -434,7 +434,7 @@ export async function handle(req, store, env = {}) {
       const m = q.get('m') || '', t = q.get('t') || '';
       const start = /^CD\d+$/.test(m) && /^[\w-]{10,40}$/.test(t) ? `/card?m=${m}&t=${t}` : '/join';
       return new Response(JSON.stringify({
-        name: 'Loyalty Club', short_name: 'Loyalty Club', description: 'Château Douma Loyalty Club', start_url: start, scope: '/', display: 'standalone',
+        name: 'Château Douma', short_name: 'Château Douma', description: 'Château Douma Loyalty Club', start_url: start, scope: '/', display: 'standalone',
         background_color: '#F6F1E7', theme_color: '#F6F1E7',
         icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: '/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }],
       }), { headers: { 'content-type': 'application/manifest+json', 'cache-control': 'no-store' } });
@@ -547,8 +547,9 @@ export async function handle(req, store, env = {}) {
       if (path === '/staff/purchase' && method === 'POST') {
         need(by.perms.purchase, 'You are not allowed to record purchases.', 403);
         if (!by.perms.redeem) need(!toCents(b.redeem), 'You are not allowed to redeem cashback.', 403);
-        const ref = normRef(b.invoiceRef); need(ref.length >= 2, 'Enter the invoice or receipt reference.');
         const txKey = clean(b.txKey, 60); need(txKey.length >= 8, 'Missing transaction key. Please refresh.');
+        // the receipt reference is optional; without one, the confirmation key keeps the purchase from being saved twice
+        const ref = normRef(b.invoiceRef) || `P-${txKey.replace(/[^A-Za-z0-9]/g, '').slice(0, 12).toUpperCase()}`;
         const m0 = await loadMember(ctx, b.memberId); need(m0, 'Member not found.', 404);
         // idempotency: the same confirmation sent twice returns the first result
         const dup = m0.ledger.find((x) => x.txKey === txKey);

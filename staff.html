@@ -375,7 +375,7 @@ function txLine(x, own, canRefund) {
   if (x.refund) p.push(`Refunded ${M(x.refund)}${x.restored ? ` · <span class="pos">+${M(x.restored)} returned</span>` : ''}${x.earnedReversed ? ` · <span class="neg">−${M(x.earnedReversed)} reversed</span>` : ''}${x.cashRefund !== undefined ? ` · cash back ${M(x.cashRefund)}` : ''}${x.shortfall ? ` · ${M(x.shortfall)} kept (cashback already spent)` : ''}`);
   const canRef = x.type === 'purchase' && canRefund && (x.refunded || 0) < x.invoice;
   const canRev = own && ['complimentary', 'adjustment', 'birthday'].includes(x.type) && !x.reversedBy;
-  return `<div class="li" style="align-items:flex-start"><div class="grow"><b>${esc(x.type === 'purchase' ? x.category : x.label)}</b>${x.invoiceRef ? ` <span class="small muted">${esc(x.invoiceRef)}</span>` : ''}
+  return `<div class="li" style="align-items:flex-start"><div class="grow"><b>${esc(x.type === 'purchase' ? x.category : x.label)}</b>${x.invoiceRef && !/^P-/.test(x.invoiceRef) ? ` <span class="small muted">${esc(x.invoiceRef)}</span>` : ''}
     <div class="small muted">${ft(x.at)}${x.by ? ' · ' + esc(x.by) : ''}</div><div class="small" style="margin-top:3px">${p.join(' · ')}</div>${x.reason || x.notes ? `<div class="small muted" style="margin-top:2px">“${esc(x.reason || x.notes)}”</div>` : ''}</div>
     <div class="stack right" style="gap:4px;align-items:flex-end">${x.balance !== undefined && x.type !== 'tier' ? `<span class="small muted">bal. ${M(x.balance)}</span>` : ''}${canRef ? `<button class="btn btn-ghost btn-sm" data-refund="${x.id}">Refund</button>` : ''}${canRev ? `<button class="btn btn-ghost btn-sm" data-reverse="${x.id}">Reverse</button>` : ''}</div></div>`;
 }
@@ -389,36 +389,33 @@ function purchaseFlow() {
   <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:start">
     <form id="pf" class="stack" style="gap:14px" novalidate>
       <div class="field"><label class="label" for="inv">Total invoice amount (${esc(SET.currency.code)}, after discounts)</label><input id="inv" inputmode="decimal" placeholder="0.00" autocomplete="off" style="font-size:22px;height:56px"></div>
-      <div class="field"><label class="label" for="cat">Purchase category</label><select id="cat">${SET.categories.map((c) => `<option value="${esc(c.name)}">${esc(c.name)}${c.eligible ? '' : ' (no cashback)'}</option>`).join('')}</select></div>
       <details><summary class="small" style="cursor:pointer;color:var(--gold-text);font-weight:600">Invoice includes items that earn no cashback?</summary><div class="field" style="margin-top:8px"><label class="label" for="ne">Amount of non-eligible items</label><input id="ne" inputmode="decimal" placeholder="0.00"><span class="small muted">${esc(SET.excludedProducts || '')}</span></div></details>
-      <div class="field"><label class="label" for="ref">Invoice / receipt reference</label><input id="ref" placeholder="e.g. 10452" autocomplete="off"></div>
       ${ME.perms.redeem ? `<div class="field"><span class="label">Redeem cashback</span>
         <div class="seg" id="redSeg"><button type="button" data-red="none" class="on">Don't redeem</button><button type="button" data-red="all">Full balance</button><button type="button" data-red="custom">Custom amount</button></div>
         <input id="redAmt" inputmode="decimal" placeholder="Amount to redeem" class="hidden"></div>` : ''}
-      <div class="field"><label class="label" for="notes">Notes (optional)</label><input id="notes" maxlength="300"></div>
     </form>
     <div class="panel stack" style="gap:2px;position:sticky;top:12px" id="preview"><span class="label">Calculation</span><p class="muted small" style="padding:10px 0">Enter the invoice amount.</p></div>
   </div>`);
   let red = 'none', q = null, timer;
   on('pBack', 'onclick', renderMember);
   document.querySelectorAll('[data-red]').forEach((x) => x.onclick = () => { red = x.dataset.red; document.querySelectorAll('[data-red]').forEach((y) => y.classList.toggle('on', y === x)); $('redAmt').classList.toggle('hidden', red !== 'custom'); refresh(); });
-  ['inv', 'ne', 'redAmt', 'cat'].forEach((id) => { const el = $(id); if (el) el.oninput = el.onchange = () => { clearTimeout(timer); timer = setTimeout(refresh, 250); }; });
-  const body = () => ({ memberId: m.id, invoice: toMoney($('inv').value), nonEligible: toMoney($('ne').value), category: $('cat').value, redeem: red === 'none' ? '' : red === 'all' ? (q ? q.maxRedeem / 100 : '') : toMoney($('redAmt').value) });
+  ['inv', 'ne', 'redAmt'].forEach((id) => { const el = $(id); if (el) el.oninput = el.onchange = () => { clearTimeout(timer); timer = setTimeout(refresh, 250); }; });
+  const body = () => ({ memberId: m.id, invoice: toMoney($('inv').value), nonEligible: toMoney($('ne').value), redeem: red === 'none' ? '' : red === 'all' ? (q ? q.maxRedeem / 100 : '') : toMoney($('redAmt').value) });
   async function refresh() {
+    if (!$('preview')) return; // left the form
     if (!$('inv') || !parseFloat(toMoney($('inv').value))) { $('preview').innerHTML = '<span class="label">Calculation</span><p class="muted small" style="padding:10px 0">Enter the invoice amount.</p>'; q = null; return; }
     try {
       if (red === 'all' && !q) { const pre = await api('/staff/quote', { ...body(), redeem: '' }); q = pre.quote; }
       q = (await api('/staff/quote', body())).quote;
+      if (!$('preview')) return;
       $('preview').innerHTML = summary(q) + `<button class="btn btn-green full" id="review" style="margin-top:12px">Review & confirm</button>`;
       on('review', 'onclick', review);
-    } catch (e) { $('preview').innerHTML = `<span class="label">Calculation</span><div class="error" style="margin-top:8px">${esc(e.message)}</div>`; q = null; }
+    } catch (e) { if (!$('preview')) return; $('preview').innerHTML = `<span class="label">Calculation</span><div class="error" style="margin-top:8px">${esc(e.message)}</div>`; q = null; }
   }
   function review() {
-    const ref = $('ref').value.trim();
-    if (!ref) { $('ref').focus(); return toast('Enter the invoice or receipt reference'); }
-    const payload = { ...body(), invoiceRef: ref, notes: $('notes').value, txKey: key };
+    const payload = { ...body(), txKey: key };
     scrollTo(0, 0);
-    set(`<button class="link" id="rBack">‹ Edit</button><h1 style="margin:6px 0 4px">Confirm purchase</h1><p class="muted" style="margin-bottom:14px">${esc(m.name)} · #${m.id} · invoice ${esc(ref)}</p>
+    set(`<button class="link" id="rBack">‹ Edit</button><h1 style="margin:6px 0 4px">Confirm purchase</h1><p class="muted" style="margin-bottom:14px">${esc(m.name)} · #${m.id}</p>
       <div class="panel" style="max-width:520px">${summary(q)}
         <div class="row" style="margin-top:14px"><button class="btn btn-ghost" id="rCancel">Back</button><button class="btn btn-gold grow" id="rGo" style="min-height:56px;font-size:17px">Confirm ${M(q.paid)} payment</button></div></div>`);
     on('rBack', 'onclick', () => { purchaseFlow(); });
@@ -462,7 +459,7 @@ function summary(q) {
 async function refundFlow(txId) {
   const x = CURRENT.transactions.find((t) => t.id === txId);
   const left = x.invoice - (x.refunded || 0);
-  const ok = await act(`Refund ${esc(x.invoiceRef)}`, `<p class="small muted">Invoice ${M(x.invoice)} · paid ${M(x.paid)} · cashback earned ${M(x.earned || 0)} · redeemed ${M(x.redeemed || 0)}. Up to ${M(left)} can still be refunded.</p>
+  const ok = await act(`Refund purchase of ${ft(x.at)}`, `<p class="small muted">Invoice ${M(x.invoice)} · paid ${M(x.paid)} · cashback earned ${M(x.earned || 0)} · redeemed ${M(x.redeemed || 0)}. Up to ${M(left)} can still be refunded.</p>
     <div class="field"><label class="label" for="f_amt">Amount to refund (leave empty for the full ${M(left)})</label><input id="f_amt" name="amount" inputmode="decimal"></div>${reasonField}
     <p class="small muted">Cashback earned on the refunded part is removed; cashback used on it is returned to the wallet. If the earned cashback was already spent, it is deducted from the cash refund.</p>`, 'Process refund', async (f) => {
     const d = await api('/staff/refund', { memberId: CURRENT.id, txId, amount: toMoney(f.amount), reason: f.reason });

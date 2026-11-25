@@ -238,7 +238,8 @@ export function quote(m, s, campaigns, input, now) {
   const invoice = input.invoiceCents | 0;
   if (!(invoice > 0)) throw new Error('Enter the invoice amount.');
   if (invoice > 10000000) throw new Error('Invoice amount looks too large.');
-  const cat = s.categories.find((c) => c.name === input.category);
+  // no category given = a normal purchase that earns cashback
+  const cat = input.category ? s.categories.find((c) => c.name === input.category) : { name: 'Purchase', eligible: true };
   if (!cat) throw new Error('Choose a purchase category.');
   let nonEligible = cat.eligible ? Math.max(0, input.nonEligibleCents | 0) : invoice;
   if (nonEligible > invoice) throw new Error('Non-eligible items cannot be more than the invoice.');
@@ -368,14 +369,14 @@ export function refund(m, s, txId, cents, reason, now, by, { reversal = false } 
   p.refunded = (p.refunded || 0) + amount; p.restored += restore; p.earnReversed += reverseEarn; p.spendReversed += reverseSpend; p.cashRefunded += cashPart;
   const cashRefund = Math.max(0, cashPart - shortfall);
   const e = entry(m, now, {
-    type: reversal ? 'reversal' : 'refund', label: reversal ? `Correction of ${p.invoiceRef}` : `Refund of ${p.invoiceRef}`,
+    type: reversal ? 'reversal' : 'refund', label: reversal ? 'Purchase corrected' : 'Purchase refunded',
     refOf: p.id, invoiceRef: p.invoiceRef, category: p.category, refund: amount, restored: restore, earnedReversed: reverseEarn,
     spendReversed: reverseSpend, cashRefund, shortfall, reason,
   }, by);
   if (reversal) p.reversedBy = e.id;
   out.events.push(e); out.entry = e;
   if (s.notifications.reversal) out.notes.push(note('reversal', true, reversal ? 'A transaction was corrected' : 'Refund processed',
-    `${reversal ? 'Purchase' : 'Refund on purchase'} ${p.invoiceRef}: ${restore > 0 ? `${fmt(restore)} cashback returned to your wallet. ` : ''}${reverseEarn > 0 ? `${fmt(reverseEarn)} cashback earned on it was removed. ` : ''}New balance: ${fmt(e.balance)}.`));
+    `${reversal ? 'A purchase was corrected' : 'A purchase was refunded'}: ${restore > 0 ? `${fmt(restore)} cashback returned to your wallet. ` : ''}${reverseEarn > 0 ? `${fmt(reverseEarn)} cashback earned on it was removed. ` : ''}New balance: ${fmt(e.balance)}.`));
   return out;
 }
 
