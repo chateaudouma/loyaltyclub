@@ -101,7 +101,7 @@ let S = null;
 fetch('/api/public/settings').then((r) => r.json()).then((s) => {
   S = s;
   const m = (c) => doumaMoney(c, s.currency.symbol);
-  $('tiers').innerHTML = s.tiers.map((t, i) => `<div class="mcard tier-${t.key}"><div style="font-size:10px;font-weight:700;letter-spacing:1px">${t.name.replace(' MEMBER', '')}</div><div class="serif" style="font-size:26px;line-height:1.1">${t.rate}%</div><div style="font-size:10px;opacity:.85">${i === 0 ? 'from day one' : 'from ' + m(t.min)}</div></div>`).join('');
+  $('tiers').innerHTML = s.tiers.map((t, i) => `<div class="mcard tier-${t.key}"><div style="font-size:10px;font-weight:700;letter-spacing:1px">${t.name.replace(' MEMBER', '')}</div><div style="font-family:var(--sans);font-weight:600;font-size:22px;line-height:1.3;letter-spacing:-.3px">${t.rate}%</div><div style="font-size:10px;opacity:.85">${i === 0 ? 'from day one' : 'from ' + m(t.min)}</div></div>`).join('');
   if (s.welcome.enabled && s.welcome.amount) { $('welcomeLine').textContent = `Join today and get a ${m(s.welcome.amount)} welcome reward in your wallet, ready to use.`; $('welcomeLine').classList.remove('hidden'); }
   $('termsBody').innerHTML = doumaTerms(s);
 });

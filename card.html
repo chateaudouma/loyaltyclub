@@ -226,7 +226,7 @@ const V = {
       <div class="sec-title"><h2>Your membership</h2></div>
       <div class="grid3">${stats.map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v" style="font-size:15px">${v}</div></div>`).join('')}</div>
       <div class="sec-title"><h2>The levels</h2></div>
-      <div class="mini-tiers">${s.tiers.map((t, i) => `<div class="mcard tier-${t.key}" style="${t.key === m.tier ? 'outline:2px solid var(--green);outline-offset:2px' : ''}"><div style="font-size:9.5px;font-weight:700;letter-spacing:.8px">${esc(t.name.replace(' MEMBER', ''))}</div><div class="serif" style="font-size:26px;line-height:1.1">${t.rate}%</div><div style="font-size:10px;opacity:.85">${i === 0 ? 'from joining' : 'from ' + M(t.min)}</div>${t.key === m.tier ? '<div style="font-size:10px;font-weight:700;margin-top:2px">You</div>' : ''}</div>`).join('')}</div>
+      <div class="mini-tiers">${s.tiers.map((t, i) => `<div class="mcard tier-${t.key}" style="${t.key === m.tier ? 'outline:2px solid var(--green);outline-offset:2px' : ''}"><div style="font-size:9.5px;font-weight:700;letter-spacing:.8px">${esc(t.name.replace(' MEMBER', ''))}</div><div style="font-family:var(--sans);font-weight:600;font-size:22px;line-height:1.3;letter-spacing:-.3px">${t.rate}%</div><div style="font-size:10px;opacity:.85">${i === 0 ? 'from joining' : 'from ' + M(t.min)}</div>${t.key === m.tier ? '<div style="font-size:10px;font-weight:700;margin-top:2px">You</div>' : ''}</div>`).join('')}</div>
       ${installHint()}`;
   },
   qr() {
