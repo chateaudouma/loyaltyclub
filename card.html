@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My card — Château Douma Loyalty Club</title>
+<meta name="theme-color" content="#F6F1E7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Loyalty Club">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+<script>
+  (function () {
+    const p = new URLSearchParams(location.search);
+    let m = p.get('m'), t = p.get('t');
+    const saved = JSON.parse(localStorage.getItem('douma_card') || 'null');
+    if (!(m && t) && saved) { m = saved.m; t = saved.t; }
+    window.CARD = m && t ? { m, t } : null;
+    const l = document.createElement('link'); l.rel = 'manifest';
+    l.href = window.CARD ? `/api/manifest?m=${encodeURIComponent(m)}&t=${encodeURIComponent(t)}` : '/api/manifest';
+    document.head.appendChild(l);
+  })();
+</script>
+<script src="/qrcode.js"></script>
+<script src="/terms.js"></script>
+<style>
+  .app{max-width:480px;margin:0 auto;min-height:100vh;padding:calc(12px + env(safe-area-inset-top)) 18px calc(100px + env(safe-area-inset-bottom))}
+  header.top{display:flex;align-items:center;justify-content:space-between;height:52px}
+  .bell{position:relative;width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .dot{position:absolute;top:9px;right:9px;width:10px;height:10px;border-radius:50%;background:#B23A2E;border:2px solid var(--ivory)}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(251,248,241,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:40}
+  nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+  nav.tabs button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font:600 10px var(--sans);color:var(--muted2);cursor:pointer;min-height:52px}
+  nav.tabs button.on{color:var(--green)}
+  nav.tabs button.on svg{stroke:var(--green)}
+  .balance-big{font-family:var(--serif);font-weight:700;font-size:54px;line-height:1;letter-spacing:-.5px}
+  .tx{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .tx .ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--field);border:1px solid var(--line)}
+  .amt{font-weight:700;font-size:14px;white-space:nowrap}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .stat .k{font-size:10px;letter-spacing:1.4px;color:var(--muted2);font-weight:600;text-transform:uppercase}
+  .stat .v{font-size:17px;font-weight:700;margin-top:3px}
+  .stampdots{display:flex;gap:6px}
+  .stampdots i{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line2);background:var(--field)}
+  .stampdots i.on{background:var(--gold);border-color:var(--gold)}
+  dialog{border:none;border-radius:22px;padding:0;max-width:440px;width:calc(100% - 32px);background:var(--paper)}
+  dialog::backdrop{background:rgba(23,44,35,.55)}
+  .switch{position:relative;width:50px;height:30px;flex:none}
+  .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+  .switch span{position:absolute;inset:0;border-radius:99px;background:#D3CABB;transition:.2s}
+  .switch span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .switch input:checked+span{background:var(--green)} .switch input:checked+span::after{left:23px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <img src="/monogram.png" alt="Château Douma" style="height:34px">
+    <div class="eyebrow" id="hdrTitle">Loyalty Club</div>
+    <button class="bell" id="bell" aria-label="Messages"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A453D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span id="dot" class="dot hidden"></span></button>
+  </header>
+
+  <div id="loading" style="display:flex;justify-content:center;padding:80px 0"><div class="spinner"></div></div>
+  <div id="nocard" class="hidden stack center" style="align-items:center;padding:40px 0">
+    <img src="/logo.png" alt="Château Douma" style="width:200px">
+    <h1 style="font-size:28px">No card on this phone yet</h1>
+    <p class="muted">Already a member? Sign in with your phone number. New here? Join in a few seconds.</p>
+    <a class="btn btn-green full" href="/join#signin">I'm already a member — sign in</a>
+    <a class="btn btn-light full" href="/join">Join the club</a>
+  </div>
+
+  <section id="v-home" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-wallet" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-membership" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-transactions" class="view hidden stack" style="gap:6px"></section>
+  <section id="v-rewards" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-profile" class="view hidden stack" style="gap:16px"></section>
+  <section id="v-inbox" class="view hidden stack" style="gap:12px"></section>
+</div>
+
+<nav class="tabs hidden" id="tabs" aria-label="Sections"><div class="in">
+  <button data-v="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button data-v="wallet"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14.5h2"/></svg>My Wallet</button>
+  <button data-v="membership"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"/></svg>Membership</button>
+  <button data-v="transactions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Transactions</button>
+  <button data-v="rewards"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M3 9h18M12 9v11M12 9c-2-4-6-4-6-1.5S10 9 12 9zm0 0c2-4 6-4 6-1.5S14 9 12 9z"/></svg>Rewards</button>
+  <button data-v="profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-5 8-5s6.5 1 8 5"/></svg>Profile</button>
+</div></nav>
+
+<dialog id="upgrade"><div id="upgradeBody" class="stack center" style="padding:26px;align-items:center"></div></dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let D = null, view = 'home';
+const S = () => D.settings;
+const M = (c) => doumaMoney(c, S().currency.symbol);
+const tz = () => S().timezone || 'Asia/Beirut';
+const fd = (iso) => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: tz() }) : '—';
+const ft = (iso) => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: tz() });
+const toast = (t) => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2800); };
+const api = async (path, body) => {
+  const r = await fetch('/api' + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ m: CARD.m, t: CARD.t, ...body }) } : { cache: 'no-store' });
+  const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Something went wrong.'); return d;
+};
+
+// ---------- shared pieces ----------
+function card(m, { compact = false } = {}) {
+  return `<div class="mcard tier-${m.tier} fade" aria-label="Membership card">
+    <div class="row between" style="align-items:flex-start">
+      <span class="plaque"><img src="/logo.png" alt="Château Douma" style="height:${compact ? 30 : 40}px;width:auto"></span>
+      <span class="badge" style="background:rgba(255,255,255,.45)">${esc(m.tierName)}</span>
+    </div>
+    <div style="margin-top:${compact ? 14 : 22}px">
+      <div class="k">Available cashback</div>
+      <div class="serif" style="font-size:${compact ? 36 : 48}px;line-height:1;margin-top:2px">${M(m.available)}</div>
+      <div class="v" style="margin-top:4px;opacity:.9">Cashback rate ${m.rate}%</div>
+    </div>
+    <div class="row between" style="margin-top:${compact ? 14 : 20}px;align-items:flex-end">
+      <div><div class="k">Member</div><div class="serif" style="font-size:20px">${esc(m.name)}</div></div>
+      <div class="right"><div class="k">No.</div><div class="v">#${m.id}</div></div>
+    </div>
+    ${m.status !== 'active' ? '<div class="pill" style="margin-top:10px;background:rgba(255,255,255,.6);color:#8A3B32">Membership suspended — please contact us</div>' : ''}
+  </div>`;
+}
+function progress(m) {
+  if (!m.next) return `<div class="panel stack" style="gap:6px"><div class="serif" style="font-size:20px">You are a ${esc(m.tierName)}</div><p class="muted small">You have reached our highest level. Thank you for being part of Château Douma.</p></div>`;
+  const short = m.next.name.toLowerCase().replace(/(^|[\s-])\S/g, (x) => x.toUpperCase()).replace(' Member', ' Member');
+  return `<div class="panel stack" style="gap:10px">
+    <div class="row between"><span class="label">Next level</span><span class="badge tier-${m.next.key}">${esc(m.next.name)}</span></div>
+    <div class="tbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(m.next.progress * 100)}" aria-label="Progress to ${esc(m.next.name)}"><i style="width:${(m.next.progress * 100).toFixed(1)}%"></i></div>
+    <div style="font-size:14px">You are <b>${M(m.next.remaining)}</b> away from becoming a <b>${esc(short)}</b> (${m.next.rate}% cashback).</div>
+  </div>`;
+}
+function qr() {
+  const q = qrcode(0, 'M'); q.addData(D.qrUrl); q.make();
+  return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }).replace(/fill="black"|fill="#000000"/g, 'fill="#1C1A17"');
+}
+const ICON = {
+  plus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E6B43" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  minus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A3B32" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>',
+  wine: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A5C25" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M7 3h10l-.6 6a4.4 4.4 0 0 1-8.8 0z"/><path d="M12 13.5V21M8.5 21h7"/></svg>',
+  gift: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E6B43" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="4" y="9" width="16" height="11" rx="1"/><path d="M3 9h18M12 9v11M12 9c-2-4-6-4-6-1.5S10 9 12 9zm0 0c2-4 6-4 6-1.5S14 9 12 9z"/></svg>',
+  star: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A5C25" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"/></svg>',
+  clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6E675C" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+  undo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A3B32" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
+};
+function txRow(x) {
+  const lines = []; let ic = ICON.wine, title = esc(x.label || x.type), sub = ft(x.at);
+  const pos = (c, t) => lines.push(`<div class="amt pos">+${M(c)} <span style="font-weight:500">${t}</span></div>`);
+  const neg = (c, t) => lines.push(`<div class="amt neg">−${M(c)} <span style="font-weight:500">${t}</span></div>`);
+  if (x.type === 'purchase') {
+    title = esc(x.category); sub += x.invoiceRef ? ` · ${esc(x.invoiceRef)}` : '';
+    lines.push(`<div class="small muted">Invoice ${M(x.invoice)} · Paid ${M(x.paid)}</div>`);
+    if (x.redeemed) neg(x.redeemed, 'redeemed');
+    if (x.earned) pos(x.earned, 'earned');
+    if (x.campaigns?.length) lines.push(`<div class="small" style="color:var(--gold-text)">${x.campaigns.map((c) => esc(c.name)).join(', ')}</div>`);
+  } else if (x.type === 'welcome') { ic = ICON.gift; pos(x.reward, x.locked ? 'welcome reward (locked)' : 'welcome reward'); }
+  else if (x.type === 'welcome-unlock') { ic = ICON.gift; lines.push(`<div class="amt pos">${M(x.unlocked || 0)} now usable</div>`); }
+  else if (x.type === 'birthday' || x.type === 'complimentary') { ic = ICON.gift; pos(x.reward, x.type === 'birthday' ? 'birthday reward' : 'gift'); }
+  else if (x.type === 'adjustment') { ic = x.adjust > 0 ? ICON.plus : ICON.minus; (x.adjust > 0 ? pos : neg)(Math.abs(x.adjust), 'adjustment'); }
+  else if (x.type === 'expire') { ic = ICON.clock; lines.push(`<div class="amt" style="color:var(--muted2)">−${M(x.expired)} expired</div>`); }
+  else if (x.type === 'refund' || x.type === 'reversal') { ic = ICON.undo; if (x.refund) lines.push(`<div class="small muted">Refunded ${M(x.refund)}</div>`); if (x.restored) pos(x.restored, 'cashback returned'); if (x.earnedReversed) neg(x.earnedReversed, 'cashback reversed'); if (x.adjust) (x.adjust > 0 ? pos : neg)(Math.abs(x.adjust), 'corrected'); }
+  else if (x.type === 'tier') { ic = ICON.star; title = esc(x.label); }
+  else if (x.type === 'stamp') { ic = ICON.wine; }
+  if (x.stamps) lines.push(`<div class="small muted">Stamps: ${x.stamps.glasses ? '+' + x.stamps.glasses + ' glass' : ''} ${x.stamps.bottles ? '+' + x.stamps.bottles + ' bottle' : ''}</div>`);
+  const bal = x.balance !== undefined && x.type !== 'tier' ? `<div class="small muted" style="white-space:nowrap">Balance ${M(x.balance)}</div>` : '';
+  return `<div class="tx"><div class="ic">${ic}</div><div class="grow"><div class="row between" style="align-items:flex-start"><div style="font-weight:600;font-size:15px">${title}</div>${bal}</div><div class="small muted">${sub}</div><div class="stack" style="gap:2px;margin-top:4px">${lines.join('')}</div></div></div>`;
+}
+
+// ---------- views ----------
+const V = {
+  home() {
+    const m = D.member;
+    const st = m.stamps;
+    return `${card(m)}
+      <div class="qrbox" style="width:188px;height:188px;margin:2px auto 0" role="img" aria-label="Your membership QR code">${qr()}</div>
+      <p class="small muted center" style="margin-top:-6px">Show this code when you pay. Scanning only identifies you — our team confirms every transaction.</p>
+      ${progress(m)}
+      ${m.locked ? `<div class="panel row" style="gap:12px">${ICON.gift}<div class="small"><b>${M(m.locked)} welcome reward</b> unlocks after ${m.verified.phone ? 'your first purchase' : 'your number is verified at your next visit and your first purchase'}.</div></div>` : ''}
+      ${D.campaigns.length ? `<div class="panel stack" style="gap:6px;border-color:var(--gold-light)"><span class="eyebrow">Now on</span>${D.campaigns.map((c) => `<div><b>${esc(c.name)}</b> <span class="small muted">until ${ft(c.endAt)}</span></div>`).join('')}</div>` : ''}
+      ${st && (st.glasses || st.bottles || st.glassRewards || st.bottleRewards) ? `<div class="panel row between"><span class="small"><b>Stamp cards</b> · ${st.glasses}/${st.goal} glasses · ${st.bottles}/${st.goal} bottles</span>${st.glassRewards + st.bottleRewards ? `<span class="pill" style="background:var(--pos-bg);color:var(--pos)">${st.glassRewards + st.bottleRewards} free drink</span>` : ''}</div>` : ''}
+      ${installHint()}`;
+  },
+  wallet() {
+    const m = D.member, w = S().wallet;
+    return `<h1>My Wallet</h1>
+      <div class="panel stack center" style="align-items:center;gap:6px;padding:26px 16px">
+        <span class="label">Available cashback</span>
+        <div class="balance-big">${M(m.available)}</div>
+        <span class="badge tier-${m.tier}">${esc(m.tierName)} · ${m.rate}%</span>
+        ${m.nextExpiry ? `<span class="small muted" style="margin-top:6px">${M(m.nextExpiry.cents)} expires on ${fd(m.nextExpiry.at)}</span>` : ''}
+        ${m.locked ? `<span class="small" style="color:var(--gold-text)">+ ${M(m.locked)} welcome reward pending</span>` : ''}
+      </div>
+      <div class="grid2">
+        <div class="stat"><div class="k">Lifetime earned</div><div class="v pos">${M(m.lifetimeEarned)}</div></div>
+        <div class="stat"><div class="k">Lifetime redeemed</div><div class="v">${M(m.lifetimeRedeemed)}</div></div>
+        <div class="stat"><div class="k">Eligible spending</div><div class="v">${M(m.spend)}</div></div>
+        <div class="stat"><div class="k">Expired</div><div class="v" style="color:var(--muted2)">${M(m.lifetimeExpired)}</div></div>
+      </div>
+      ${m.lots.length ? `<div class="panel stack" style="gap:4px"><span class="label">Expiry schedule</span>${m.lots.slice(0, 8).map((l) => `<div class="row between small" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>${M(l.cents)} <span class="muted">${{ earn: 'cashback', welcome: 'welcome', birthday: 'birthday', complimentary: 'gift', restore: 'returned', adjust: 'adjustment' }[l.kind] || ''}</span></span><span class="muted">expires ${fd(l.expiresAt)}</span></div>`).join('')}</div>` : ''}
+      ${w.apple || w.google ? `<div class="stack" style="gap:10px">${w.apple ? `<a class="btn btn-green full" href="/api/wallet/apple/pass?m=${CARD.m}&t=${CARD.t}">Add to Apple Wallet</a>` : ''}${w.google ? `<button class="btn btn-green full" id="gw">Add to Google Wallet</button>` : ''}</div>` : ''}
+      <p class="small muted">Cashback is store credit for Château Douma only. It cannot be exchanged for cash or transferred.</p>`;
+  },
+  membership() {
+    const m = D.member;
+    return `<h1>My Membership</h1>${card(m, { compact: true })}${progress(m)}
+      <div class="grid2">
+        <div class="stat"><div class="k">Membership no.</div><div class="v">#${m.id}</div></div>
+        <div class="stat"><div class="k">Cashback rate</div><div class="v">${m.rate}%</div></div>
+        <div class="stat"><div class="k">Eligible spending</div><div class="v">${M(m.spend)}</div></div>
+        <div class="stat"><div class="k">Visits</div><div class="v">${m.visits}</div></div>
+        <div class="stat"><div class="k">Member since</div><div class="v">${fd(m.joinedAt)}</div></div>
+        <div class="stat"><div class="k">Last visit</div><div class="v">${m.lastVisit ? fd(m.lastVisit) : '—'}</div></div>
+      </div>
+      <h3 style="margin-top:6px">The three levels</h3>
+      <div class="stack" style="gap:10px">${S().tiers.map((t, i) => `<div class="mcard tier-${t.key}" style="padding:14px 16px;${t.key === m.tier ? 'outline:2px solid var(--green);outline-offset:2px' : ''}">
+        <div class="row between"><div><div style="font-size:12px;font-weight:700;letter-spacing:1px">${esc(t.name)}</div><div class="small" style="opacity:.85">${i === 0 ? 'From registration' : 'From ' + M(t.min) + ' eligible spending'}</div></div>
+        <div class="serif" style="font-size:30px">${t.rate}%</div></div>${t.key === m.tier ? '<div class="small" style="font-weight:700;margin-top:4px">Your level</div>' : ''}</div>`).join('')}</div>`;
+  },
+  transactions() {
+    const list = D.member.transactions;
+    return `<h1 style="margin-bottom:6px">Transactions</h1>${list.length ? list.map(txRow).join('') : '<p class="muted">No transactions yet. Your history appears here after your first visit.</p>'}`;
+  },
+  rewards() {
+    const m = D.member, s = S(), st = m.stamps;
+    const welcomeDone = m.transactions.some((x) => x.type === 'welcome-unlock');
+    return `<h1>Rewards</h1>
+      ${s.welcome.enabled ? `<div class="panel row" style="gap:12px;align-items:flex-start">${ICON.gift}<div class="grow"><b>Welcome reward · ${M(s.welcome.amount)}</b><div class="small muted">${m.locked ? (m.verified.phone ? 'Unlocks with your first paid purchase.' : 'Unlocks when our team verifies your number at your next visit, after your first paid purchase.') : welcomeDone ? 'Unlocked and added to your wallet.' : 'Given to new members.'}</div></div></div>` : ''}
+      ${s.birthday.enabled ? `<div class="panel row" style="gap:12px;align-items:flex-start">${ICON.gift}<div class="grow"><b>Birthday reward · ${M(s.birthday.amount)}</b><div class="small muted">${m.dob ? `Arrives on your birthday every year, valid ${s.birthday.validDays} days.` : 'Add your date of birth in Profile to receive it.'}</div></div>${m.dob ? '' : '<button class="btn btn-light btn-sm" data-go="profile">Add</button>'}</div>` : ''}
+      ${D.campaigns.length ? `<div class="stack" style="gap:8px"><span class="label">Current offers</span>${D.campaigns.map((c) => `<div class="panel" style="border-color:var(--gold-light)"><b>${esc(c.name)}</b><div class="small muted">${c.type === 'multiplier' ? `${c.value}× cashback` : `${c.value}% cashback`}${c.categories?.length ? ' on ' + c.categories.map(esc).join(', ') : ''} · until ${ft(c.endAt)}</div>${c.description ? `<div class="small" style="margin-top:4px">${esc(c.description)}</div>` : ''}</div>`).join('')}</div>` : ''}
+      ${st ? `<div class="panel stack" style="gap:12px"><span class="label">Stamp cards</span>
+        ${[['glasses', 'glass', 'glassRewards', 'Wine by the glass'], ['bottles', 'bottle', 'bottleRewards', 'Wine by the bottle']].map(([k, one, rk, t]) => `<div class="stack" style="gap:6px"><div class="row between"><span class="serif" style="font-size:18px">${t}</span><span class="small" style="font-weight:700;color:var(--gold-text)">${st[k]}/${st.goal}</span></div><div class="stampdots">${Array.from({ length: st.goal }, (_, i) => `<i class="${i < st[k] ? 'on' : ''}"></i>`).join('')}</div>${st[rk] ? `<div class="ok small">${st[rk]} free ${one} ready — show your card to our team.</div>` : `<div class="small muted">Every ${st.goal}th ${one} is on us.</div>`}</div>`).join('')}</div>` : ''}
+      <details class="panel"><summary class="label" style="cursor:pointer">Programme terms</summary><div class="muted" style="margin-top:10px">${doumaTerms(s)}</div></details>`;
+  },
+  profile() {
+    const m = D.member, s = S();
+    const notif = 'Notification' in window ? Notification.permission : 'unsupported';
+    return `<h1>Profile</h1>
+      <div class="panel stack" style="gap:14px">
+        <div><div class="label">Name</div><div style="font-size:16px;margin-top:2px">${esc(m.name)}</div></div>
+        <div><div class="label">Phone</div><div style="font-size:16px;margin-top:2px">${fmtPhone(m.phone)} ${m.verified.phone ? '<span class="pill" style="background:var(--pos-bg);color:var(--pos)">Verified</span>' : '<span class="small muted">· verified by our team at your next visit</span>'}</div></div>
+        <div class="field"><label class="label" for="pDob">Date of birth</label>${m.dob ? `<div style="font-size:16px">${new Date(m.dob + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div><span class="small muted">Saved. Ask our team if it needs correcting.</span>` : `<input id="pDob" type="date" max="${new Date(Date.now() - 18 * 365.25 * 864e5).toISOString().slice(0, 10)}"><span class="small muted">You can save it once — it cannot be changed afterwards.</span>`}</div>
+        ${m.dob ? '' : '<button class="btn btn-green" id="saveProfile">Save</button>'}
+        <div id="pMsg" class="hidden"></div>
+      </div>
+      <div class="panel stack" style="gap:14px">
+        <span class="label">Notifications</span>
+        <div class="row between" style="gap:12px"><div><b style="font-size:15px">Phone notifications</b><div class="small muted">Cashback, rewards and important account messages.</div></div>
+          ${notif === 'granted' ? '<span class="pill" style="background:var(--pos-bg);color:var(--pos)">On</span>' : notif === 'denied' ? '<span class="small muted">Blocked in phone settings</span>' : '<button class="btn btn-light btn-sm" id="pushOn">Turn on</button>'}</div>
+        ${notif === 'unsupported' || (/iphone|ipad/i.test(navigator.userAgent) && !standalone) ? '<div class="small muted">On iPhone, add this card to your Home Screen first (Share → Add to Home Screen), then open it from there to allow notifications.</div>' : ''}
+        <div class="row between"><div><b style="font-size:15px">News & offers</b><div class="small muted">Events, tastings and campaigns. Essential account messages are always sent.</div></div>
+          <label class="switch"><input type="checkbox" id="mk" ${m.prefs.marketing ? 'checked' : ''} aria-label="News and offers"><span></span></label></div>
+      </div>
+      <div class="panel stack"><span class="label">Programme terms</span><div class="muted">${doumaTerms(s)}</div></div>
+      <button class="link" id="forget" style="align-self:center;color:var(--muted)">Remove this card from this device</button>`;
+  },
+  inbox() {
+    const seen = localStorage.getItem('douma_seen') || '';
+    return `<div class="row between"><button class="link" data-go="home">‹ Back</button></div><h1>Messages</h1>
+      ${D.inbox.length ? D.inbox.map((x) => `<div class="panel stack" style="gap:4px"><div class="row between"><span class="small" style="font-weight:700;letter-spacing:1px;color:${x.at > seen ? 'var(--gold-text)' : 'var(--muted2)'}">${x.at > seen ? '● NEW' : x.scope === 'all' ? 'ALL MEMBERS' : 'FOR YOU'}</span><span class="small muted">${ft(x.at)}</span></div><div class="serif" style="font-size:20px">${esc(x.title)}</div><div style="font-size:14px;line-height:1.5;white-space:pre-line">${esc(x.body)}</div></div>`).join('') : '<p class="muted">No messages yet.</p>'}`;
+  },
+};
+const fmtPhone = (p) => p && p.startsWith('961') ? `+961 ${p.slice(3, 5)} ${p.slice(5, 8)} ${p.slice(8)}`.trim() : '+' + esc(p);
+const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+function installHint() { return standalone ? '' : `<p class="small muted center">Tip: tap Share → “Add to Home Screen” to keep your card one tap away.</p>`; }
+
+function show(v) {
+  view = v;
+  document.querySelectorAll('.view').forEach((x) => x.classList.add('hidden'));
+  const el = $('v-' + v); el.innerHTML = V[v](); el.classList.remove('hidden');
+  document.querySelectorAll('nav.tabs button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'inbox') setTimeout(() => { localStorage.setItem('douma_seen', new Date().toISOString()); $('dot').classList.add('hidden'); }, 400);
+  bind();
+}
+function bind() {
+  document.querySelectorAll('[data-go]').forEach((b) => b.onclick = () => { show(b.dataset.go); scrollTo(0, 0); });
+  const gw = $('gw'); if (gw) gw.onclick = async () => { try { const d = await api(`/wallet/google?m=${CARD.m}&t=${CARD.t}`); location.href = d.url; } catch (e) { toast(e.message); } };
+  const sp = $('saveProfile');
+  if (sp) sp.onclick = async () => {
+    const body = {};
+    if ($('pDob')?.value) body.dob = $('pDob').value; else return;
+    try { const d = await api('/me/profile', body); D.member = d.member; toast('Saved'); show('profile'); }
+    catch (e) { $('pMsg').className = 'error'; $('pMsg').textContent = e.message; }
+  };
+  const mk = $('mk'); if (mk) mk.onchange = async () => { try { const d = await api('/me/profile', { prefs: { marketing: mk.checked } }); D.member = d.member; toast(mk.checked ? 'You will receive news & offers' : 'News & offers turned off'); } catch (e) { toast(e.message); } };
+  const po = $('pushOn'); if (po) po.onclick = async () => { await enablePush(true); show('profile'); };
+  const fg = $('forget'); if (fg) fg.onclick = () => { localStorage.removeItem('douma_card'); location.href = '/join'; };
+}
+
+// ---------- data ----------
+async function load(first) {
+  if (!window.CARD) { $('loading').classList.add('hidden'); $('nocard').classList.remove('hidden'); return; }
+  try {
+    const r = await fetch(`/api/me?m=${encodeURIComponent(CARD.m)}&t=${encodeURIComponent(CARD.t)}`, { cache: 'no-store' });
+    if (r.status === 404) { $('loading').classList.add('hidden'); $('nocard').classList.remove('hidden'); return; }
+    const d = await r.json(); if (!r.ok) throw new Error(d.error);
+    const prev = D?.member;
+    D = d;
+    localStorage.setItem('douma_card', JSON.stringify(CARD));
+    $('loading').classList.add('hidden'); $('tabs').classList.remove('hidden');
+    const seen = localStorage.getItem('douma_seen') || '';
+    $('dot').classList.toggle('hidden', !D.inbox.some((x) => x.at > seen));
+    // re-render only if something changed (keeps forms intact while typing)
+    const sig = JSON.stringify([D.member.available, D.member.tier, D.member.transactions[0]?.id, D.inbox[0]?.id, D.member.prefs, D.member.dob, D.member.verified]);
+    if (first || sig !== window.__sig) { if (!(view === 'profile' && !first && document.activeElement?.tagName === 'INPUT')) show(view); }
+    if (prev && D.member.available > prev.available) toast(`+${M(D.member.available - prev.available)} cashback added`);
+    window.__sig = sig;
+    celebrate();
+    if (first) enablePush(false);
+  } catch (e) { /* offline: keep showing the last card */ }
+}
+function celebrate() {
+  const m = D.member, last = localStorage.getItem('douma_tier_' + m.id);
+  const idx = (k) => S().tiers.findIndex((t) => t.key === k);
+  if (last && idx(m.tier) > idx(last)) {
+    $('upgradeBody').innerHTML = `<span class="eyebrow">Membership upgraded</span><h2>Welcome to ${esc(m.tierName)}</h2>${card(m, { compact: true })}<p class="muted">From now on you earn <b>${m.rate}%</b> cashback on every eligible purchase.</p><button class="btn btn-green full" onclick="document.getElementById('upgrade').close()">Wonderful</button>`;
+    $('upgrade').showModal();
+  }
+  localStorage.setItem('douma_tier_' + m.id, m.tier);
+}
+
+// ---------- push ----------
+let swReg = null;
+function b64ToBytes(b) { const p = '='.repeat((4 - b.length % 4) % 4); const s = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, (c) => c.charCodeAt(0)); }
+async function enablePush(ask) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+  swReg = swReg || await navigator.serviceWorker.register('/sw.js').catch(() => null);
+  if (!swReg) return;
+  if (Notification.permission === 'default' && ask) await Notification.requestPermission();
+  if (Notification.permission !== 'granted') return;
+  try {
+    let sub = await swReg.pushManager.getSubscription();
+    if (!sub) sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(D.vapidPublicKey) });
+    await api('/subscribe', { subscription: sub.toJSON() });
+  } catch (e) { console.warn(e); }
+}
+
+document.querySelectorAll('nav.tabs button').forEach((b) => b.onclick = () => { show(b.dataset.v); scrollTo(0, 0); });
+$('bell').onclick = () => { if (D) { show('inbox'); scrollTo(0, 0); } };
+load(true);
+setInterval(() => { if (document.visibilityState === 'visible') load(false); }, 12000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(false); });
+navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data === 'refresh') load(false); });
+</script>
+</body>
+</html>

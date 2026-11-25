@@ -1,0 +1,50 @@
+# Château Douma Loyalty Club — Netlify configuration.
+# All files sit in the main folder (no folders needed when uploading to GitHub).
+# The build step puts the two server functions where Netlify expects them,
+# and copies only the public files into "site", which is what goes online.
+[build]
+  command = "mkdir -p netlify/functions && cp api.mjs daily.mjs netlify/functions/ && rm -rf site && mkdir site && cp *.html *.css *.png *.webmanifest jsQR.js qrcode.js sw.js terms.js site/"
+  publish = "site"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/"
+  to = "/join"
+  status = 302
+
+[[redirects]]
+  from = "/join"
+  to = "/join.html"
+  status = 200
+
+[[redirects]]
+  from = "/card"
+  to = "/card.html"
+  status = 200
+
+[[redirects]]
+  from = "/staff"
+  to = "/staff.html"
+  status = 200
+
+[[redirects]]
+  from = "/m/*"
+  to = "/m.html"
+  status = 200
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "same-origin"
+    Permissions-Policy = "camera=(self)"
+    X-Frame-Options = "SAMEORIGIN"

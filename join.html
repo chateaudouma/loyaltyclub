@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="apple-mobile-web-app-title" content="Loyalty Club">
+<meta name="application-name" content="Loyalty Club">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Join — Château Douma Loyalty Club</title>
+<meta name="theme-color" content="#F6F1E7">
+<link rel="manifest" href="/api/manifest">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+<script src="/terms.js"></script>
+<style>
+  main{max-width:460px;margin:0 auto;padding:calc(32px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:16px}
+  .tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .tiers .mcard{padding:12px 10px;border-radius:14px;text-align:center}
+  .tiers .mcard::after{display:none}
+  .seg-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:4px}
+  .seg-tabs button{border:none;background:none;border-radius:10px;min-height:44px;font:600 14px var(--sans);color:var(--muted);cursor:pointer}
+  .seg-tabs button.on{background:var(--green);color:var(--ivory)}
+  dialog{border:none;border-radius:20px;padding:0;max-width:520px;width:calc(100% - 32px);background:var(--paper)}
+  dialog::backdrop{background:rgba(23,44,35,.5)}
+</style>
+</head>
+<body>
+<main>
+  <div class="center stack" style="align-items:center;gap:8px">
+    <img src="/logo.png" alt="Château Douma — Refined Winery" style="width:220px;height:auto">
+    <div class="eyebrow">Loyalty Club</div>
+  </div>
+
+  <div id="have" class="panel row between hidden"><span style="font-size:14px">You already have a card on this phone.</span><a id="haveLink" class="link" href="/card">Open my card</a></div>
+
+  <div class="seg-tabs" role="tablist" aria-label="Join or sign in">
+    <button type="button" role="tab" id="tabJoin" class="on">Join the club</button>
+    <button type="button" role="tab" id="tabSign">I'm already a member</button>
+  </div>
+
+  <section id="signin" class="hidden stack" style="gap:14px">
+    <div class="stack" style="gap:6px"><h1>Welcome back</h1><p class="muted" style="font-size:15px">Open your card on this phone with the number you joined with.</p></div>
+    <form id="sf" novalidate class="stack" style="gap:14px">
+      <div class="field"><label class="label" for="sphone">Phone number</label>
+        <div class="row"><input id="scc" aria-label="Country code" value="+961" inputmode="tel" style="width:86px;flex:none;text-align:center"><input id="sphone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="71 234 567"></div></div>
+      <div id="serr" class="error hidden" role="alert"></div>
+      <button id="sgo" class="btn btn-green full" type="submit">Continue</button>
+    </form>
+    <div id="scode" class="hidden stack center" style="align-items:center;gap:12px">
+      <span class="label">Your sign-in code</span>
+      <div id="codeBig" class="serif" style="font-size:54px;letter-spacing:8px;line-height:1"></div>
+      <p style="font-size:15px;line-height:1.5;max-width:320px">Show this code to our team. Your card opens here automatically as soon as they confirm it.</p>
+      <div class="row small muted"><div class="spinner" style="width:16px;height:16px;border-width:2px"></div><span id="swait">Waiting for confirmation…</span></div>
+      <button class="link" id="sagain">Use a different number</button>
+    </div>
+    <p class="small muted center">Not at Château Douma right now? Message us and we will send your card link on WhatsApp.</p>
+  </section>
+
+  <section id="joinBox" class="stack" style="gap:16px">
+  <div class="stack" style="gap:6px;margin-top:6px">
+    <h1>Join the club</h1>
+    <p class="muted" style="font-size:15px">Earn cashback in your wallet on every visit, and rise through the levels.</p>
+  </div>
+  <div class="tiers" id="tiers" aria-label="Membership levels"></div>
+  <p id="welcomeLine" class="small muted hidden"></p>
+
+  <form id="f" novalidate class="stack" style="gap:14px">
+    <div class="field"><label class="label" for="name">Full name</label><input id="name" autocomplete="name" required maxlength="60" placeholder="e.g. Michelle Issa"></div>
+    <div class="field">
+      <label class="label" for="phone">Phone number</label>
+      <div class="row"><input id="cc" aria-label="Country code" value="+961" inputmode="tel" style="width:86px;flex:none;text-align:center"><input id="phone" type="tel" inputmode="tel" autocomplete="tel-national" required placeholder="71 234 567"></div>
+    </div>
+    <div class="field">
+      <label class="label" for="dob">Date of birth <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">(optional, for your birthday reward)</span></label>
+      <input id="dob" type="date" autocomplete="bday">
+      <span class="small muted">Saved once — it cannot be changed later.</span>
+    </div>
+    <label class="row" style="align-items:flex-start;font-size:14px"><input id="adult" type="checkbox"><span>I am 18 years old or older.</span></label>
+    <label class="row" style="align-items:flex-start;font-size:14px"><input id="consent" type="checkbox"><span>I accept the <button type="button" class="link" id="openTerms" style="padding:0;font-size:14px">loyalty programme terms</button> and agree that Château Douma stores my details for the club.</span></label>
+    <label class="row" style="align-items:flex-start;font-size:14px"><input id="marketing" type="checkbox" checked><span>Send me news about events, tastings and special offers. <span class="muted">(You can change this anytime.)</span></span></label>
+    <div id="err" class="error hidden" role="alert"></div>
+    <button id="go" class="btn btn-green full" type="submit">Create my card</button>
+  </form>
+  </section>
+</main>
+
+<dialog id="terms">
+  <div class="stack" style="padding:22px">
+    <div class="row between"><h2>Programme terms</h2><button class="link" onclick="document.getElementById('terms').close()">Close</button></div>
+    <div id="termsBody" class="muted"></div>
+  </div>
+</dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const saved = JSON.parse(localStorage.getItem('douma_card') || 'null');
+if (saved?.m && saved?.t) { $('have').classList.remove('hidden'); $('haveLink').href = `/card?m=${saved.m}&t=${saved.t}`; }
+let S = null;
+fetch('/api/public/settings').then((r) => r.json()).then((s) => {
+  S = s;
+  const m = (c) => doumaMoney(c, s.currency.symbol);
+  $('tiers').innerHTML = s.tiers.map((t, i) => `<div class="mcard tier-${t.key}"><div style="font-size:10px;font-weight:700;letter-spacing:1px">${t.name.replace(' MEMBER', '')}</div><div class="serif" style="font-size:26px;line-height:1.1">${t.rate}%</div><div style="font-size:10px;opacity:.85">${i === 0 ? 'from day one' : 'from ' + m(t.min)}</div></div>`).join('');
+  if (s.welcome.enabled && s.welcome.amount) { $('welcomeLine').textContent = `New members get a ${m(s.welcome.amount)} welcome reward, unlocked after your first visit.`; $('welcomeLine').classList.remove('hidden'); }
+  $('termsBody').innerHTML = doumaTerms(s);
+});
+// ---------- join / sign in tabs ----------
+function tab(which) {
+  const sign = which === 'signin';
+  $('signin').classList.toggle('hidden', !sign); $('joinBox').classList.toggle('hidden', sign);
+  $('tabSign').classList.toggle('on', sign); $('tabJoin').classList.toggle('on', !sign);
+  if (sign) setTimeout(() => $('sphone').focus(), 50);
+}
+$('tabJoin').onclick = () => { history.replaceState(null, '', '#join'); tab('join'); };
+$('tabSign').onclick = () => { history.replaceState(null, '', '#signin'); tab('signin'); };
+if (location.hash === '#signin') tab('signin');
+let pollTimer = null;
+$('sf').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('serr').classList.add('hidden');
+  const phone = '+' + $('scc').value.replace(/\D/g, '') + $('sphone').value.replace(/\D/g, '').replace(/^0+/, '');
+  $('sgo').disabled = true;
+  try {
+    const r = await fetch('/api/login/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ phone }) });
+    const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Something went wrong.');
+    $('codeBig').textContent = d.code; $('sf').classList.add('hidden'); $('scode').classList.remove('hidden');
+    const until = Date.now() + d.expiresInMinutes * 60e3;
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      if (Date.now() > until) { clearInterval(pollTimer); $('swait').textContent = 'This code expired. Tap "Use a different number" to get a new one.'; return; }
+      try {
+        const p = await (await fetch(`/api/login/poll?r=${d.req}&s=${d.secret}`, { cache: 'no-store' })).json();
+        if (p.status === 'ok') { clearInterval(pollTimer); localStorage.setItem('douma_card', JSON.stringify({ m: p.m, t: p.t })); location.href = `/card?m=${p.m}&t=${p.t}`; }
+        if (p.status === 'expired') { clearInterval(pollTimer); $('swait').textContent = 'This code expired. Please try again.'; }
+      } catch (_) {}
+    }, 3000);
+  } catch (ex) { $('serr').textContent = ex.message; $('serr').classList.remove('hidden'); }
+  $('sgo').disabled = false;
+});
+$('sagain').onclick = () => { clearInterval(pollTimer); $('scode').classList.add('hidden'); $('sf').classList.remove('hidden'); };
+$('openTerms').onclick = () => $('terms').showModal();
+$('dob').max = new Date(Date.now() - 18 * 365.25 * 864e5).toISOString().slice(0, 10);
+$('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('err').classList.add('hidden');
+  $('go').disabled = true; $('go').textContent = 'Creating your card…';
+  try {
+    const cc = $('cc').value.replace(/\D/g, '');
+    const local = $('phone').value.replace(/\D/g, '').replace(/^0+/, '');
+    const r = await fetch('/api/join', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+      name: $('name').value, phone: '+' + cc + local, dob: $('dob').value,
+      adult: $('adult').checked, consent: $('consent').checked, marketing: $('marketing').checked }) });
+    const d = await r.json();
+    if (r.status === 409) { $('sphone').value = $('phone').value; $('scc').value = $('cc').value; tab('signin'); $('sgo').click(); return; }
+    if (!r.ok) throw new Error(d.error || 'Something went wrong.');
+    localStorage.setItem('douma_card', JSON.stringify({ m: d.id, t: d.token }));
+    location.href = `/card?m=${d.id}&t=${d.token}&new=1`;
+  } catch (ex) {
+    $('err').textContent = ex.message; $('err').classList.remove('hidden');
+    $('go').disabled = false; $('go').textContent = 'Create my card';
+  }
+});
+</script>
+</body>
+</html>

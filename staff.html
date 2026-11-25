@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Owner & Staff — Château Douma Loyalty Club</title>
+<meta name="theme-color" content="#172C23">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Douma Staff">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/staff.webmanifest">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/staff-apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+<script src="/jsQR.js" defer></script>
+<script src="/qrcode.js" defer></script>
+<script src="/terms.js"></script>
+<style>
+  body{background:var(--ivory)}
+  /* PIN screen */
+  #pin{min-height:100vh;background:var(--green-dark);color:var(--ivory);display:flex;flex-direction:column;align-items:center;padding:calc(56px + env(safe-area-inset-top)) 24px 32px}
+  .keypad{display:grid;grid-template-columns:repeat(3,76px);gap:16px 22px;justify-content:center;margin-top:22px}
+  .key{width:76px;height:76px;border-radius:50%;border:none;background:var(--green-mid);color:var(--ivory);font:500 26px var(--sans);cursor:pointer}
+  .key:active{background:#2F5A42}.key.plain{background:transparent;color:var(--gold-light);font-size:16px;font-weight:600}
+  .dots{display:flex;gap:14px;min-height:16px;margin-top:24px}.dots i{width:14px;height:14px;border-radius:50%;background:var(--gold)}.dots i.e{background:none;border:1.5px solid #6F8378}
+  /* shell */
+  .shell{display:flex;min-height:100vh}
+  aside{width:230px;background:var(--green-dark);color:var(--ivory);padding:22px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;flex:none}
+  aside button{background:none;border:none;color:var(--sage);font:600 14px var(--sans);text-align:left;padding:12px 14px;border-radius:12px;cursor:pointer;display:flex;gap:10px;align-items:center}
+  aside button.on{background:var(--green-mid);color:var(--ivory)}
+  main.content{flex:1;min-width:0;padding:24px 28px 60px;max-width:1100px}
+  .topbar{display:none}
+  @media (max-width:899px){
+    aside{display:none}
+    .topbar{display:flex;position:sticky;top:0;z-index:30;background:var(--green-dark);color:var(--ivory);padding:calc(10px + env(safe-area-inset-top)) 14px 0;flex-direction:column;gap:8px}
+    .topbar nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+    .topbar nav::-webkit-scrollbar{display:none}
+    .topbar nav button{flex:none;background:var(--green-mid);border:none;color:var(--sage);font:600 13px var(--sans);padding:9px 14px;border-radius:99px;cursor:pointer;min-height:38px}
+    .topbar nav button.on{background:var(--gold);color:var(--ink)}
+    main.content{padding:16px 14px 60px}
+  }
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+  .metric{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .metric .k{font-size:11px;letter-spacing:1px;color:var(--muted2);font-weight:600;text-transform:uppercase}
+  .metric .v{font-size:22px;font-weight:700;margin-top:4px;font-family:var(--serif)}
+  .metric .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .list{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .li{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px}
+  .li:last-child{border-bottom:none}
+  button.li{width:100%;background:none;border-left:none;border-right:none;border-top:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+  button.li:hover{background:var(--field)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{font-size:11px;letter-spacing:.8px;color:var(--muted2);text-transform:uppercase;background:var(--paper);position:sticky;top:0}
+  .tablewrap{overflow:auto;max-height:70vh;background:var(--paper);border:1px solid var(--line);border-radius:14px}
+  .seg{display:inline-flex;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;flex-wrap:wrap}
+  .seg button{border:none;background:none;padding:8px 12px;border-radius:9px;font:600 13px var(--sans);color:var(--muted);cursor:pointer;min-height:36px}
+  .seg button.on{background:var(--green);color:var(--ivory)}
+  .cam{position:relative;aspect-ratio:4/3;max-height:380px;border-radius:20px;background:#0C1712;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .cam .frame{position:relative;width:55%;aspect-ratio:1;border:3px solid var(--gold);border-radius:22px;pointer-events:none}
+  dialog{border:none;border-radius:20px;padding:0;max-width:520px;width:calc(100% - 24px);background:var(--ivory);max-height:92vh}
+  dialog::backdrop{background:rgba(23,44,35,.55)}
+  .sum{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .sum.big{font-size:18px;font-weight:700;border-bottom:none}
+  .bars{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:8px}
+  .bars i{flex:1;background:linear-gradient(180deg,var(--gold),#B58A38);border-radius:4px 4px 0 0;min-height:2px}
+  .step{display:flex;align-items:center;gap:8px}
+  .step button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line2);background:var(--field);font-size:20px;cursor:pointer}
+  .chk{display:flex;gap:8px;flex-wrap:wrap}
+  @media print{ body *{visibility:hidden} #poster,#poster *{visibility:visible} #poster{position:fixed;inset:0;margin:auto;border:none;max-width:none} }
+  .chk label{display:flex;gap:6px;align-items:center;background:var(--field);border:1px solid var(--line2);border-radius:10px;padding:8px 10px;font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- ============ PIN ============ -->
+<section id="pin" class="hidden">
+  <img src="/monogram.png" alt="Château Douma" style="width:80px">
+  <div class="eyebrow" style="margin-top:16px;color:var(--gold-light)">Owner & staff</div>
+  <h1 style="margin-top:8px">Enter your PIN</h1>
+  <div class="dots" id="dots" aria-live="polite"></div>
+  <div id="pinErr" role="alert" style="min-height:22px;margin-top:10px;font-size:13px;color:#FFB4A8"></div>
+  <div class="keypad" id="keypad"></div>
+  <p class="small" style="margin-top:28px;color:var(--sage2);text-align:center;max-width:300px">Each person signs in with their own PIN, so every transaction shows who made it.</p>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hidden">
+  <div class="topbar"><div class="row between"><div class="row"><img src="/monogram.png" alt="" style="height:30px"><b class="serif" style="font-size:19px" id="whoTop"></b></div><button class="link" style="color:var(--gold-light)" data-lock>Lock</button></div><nav id="navTop"></nav></div>
+  <div class="shell">
+    <aside><div class="row" style="padding:0 8px 18px"><img src="/monogram.png" alt="" style="height:34px"><div><div class="serif" style="font-size:18px">Château Douma</div><div class="small" style="color:var(--sage2)" id="whoSide"></div></div></div><div id="navSide" class="stack" style="gap:2px"></div><div style="flex:1"></div><button data-lock>Lock</button></aside>
+    <main class="content" id="view"></main>
+  </div>
+</div>
+
+<dialog id="dlg"><form method="dialog" id="dlgForm" class="stack" style="padding:20px;gap:14px"></form></dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let TOKEN = sessionStorage.getItem('douma_tok') || localStorage.getItem('douma_staff_tok') || '';
+let ME = null, SET = null, CURRENT = null, VIEW = null;
+const SYM = () => SET?.currency?.symbol || '$';
+const M = (c) => doumaMoney(c || 0, SYM());
+const TZ = () => SET?.timezone || 'Asia/Beirut';
+const fd = (iso) => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ() }) : '—';
+const ft = (iso) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: TZ() }) : '—';
+const tierName = (k) => SET?.tiers.find((t) => t.key === k)?.name || k;
+const toast = (t) => { const d = document.createElement('div'); d.className = 'toast'; d.style.bottom = '24px'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 3000); };
+const toMoney = (s) => s === '' || s == null ? '' : String(s).replace(',', '.');
+
+async function api(path, body, method) {
+  const r = await fetch('/api' + path, { method: method || (body ? 'POST' : 'GET'), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + TOKEN }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
+  if (r.status === 401) { lock(); throw new Error('Please sign in again.'); }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Something went wrong.');
+  return d;
+}
+async function download(path) {
+  const r = await fetch('/api' + path, { headers: { authorization: 'Bearer ' + TOKEN } });
+  if (!r.ok) return toast('Export failed');
+  const name = (r.headers.get('content-disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'export.csv';
+  const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = name; a.click();
+}
+
+// ============ PIN ============
+let typed = '';
+function drawPin() { $('dots').innerHTML = Array.from({ length: Math.max(4, typed.length) }, (_, i) => `<i class="${i < typed.length ? '' : 'e'}"></i>`).join(''); }
+$('keypad').innerHTML = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'].map((k) => k === 'del' ? '<button class="key plain" data-k="del" aria-label="Delete">⌫</button>' : k === 'ok' ? '<button class="key plain" data-k="ok">Enter</button>' : `<button class="key" data-k="${k}">${k}</button>`).join('');
+$('keypad').onclick = (e) => { const k = e.target.closest('button')?.dataset.k; if (k) press(k); };
+document.addEventListener('keydown', (e) => { if ($('pin').classList.contains('hidden')) return; if (/^\d$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('del'); else if (e.key === 'Enter') press('ok'); });
+function press(k) { $('pinErr').textContent = ''; if (k === 'del') typed = typed.slice(0, -1); else if (k === 'ok') return login(); else if (typed.length < 10) typed += k; drawPin(); }
+async function login() {
+  if (typed.length < 4) { $('pinErr').textContent = 'PINs have at least 4 digits.'; return; }
+  try {
+    const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pin: typed }) });
+    const d = await r.json(); if (!r.ok) throw new Error(d.error);
+    TOKEN = d.token;
+    if (d.role === 'owner') sessionStorage.setItem('douma_tok', TOKEN); else localStorage.setItem('douma_staff_tok', TOKEN);
+    await start();
+  } catch (e) { $('pinErr').textContent = e.message; }
+  typed = ''; drawPin();
+}
+function lock() { TOKEN = ''; sessionStorage.removeItem('douma_tok'); localStorage.removeItem('douma_staff_tok'); stopCam(); $('app').classList.add('hidden'); $('pin').classList.remove('hidden'); typed = ''; drawPin(); }
+document.querySelectorAll('[data-lock]').forEach((b) => b.onclick = lock);
+
+// ============ SHELL ============
+const NAV_OWNER = [['dashboard', 'Dashboard'], ['scan', 'Scan Member'], ['customers', 'Customers'], ['transactions', 'Transactions'], ['campaigns', 'Campaigns'], ['analytics', 'Analytics'], ['staff', 'Staff'], ['settings', 'Settings']];
+const NAV_STAFF = [['scan', 'Scan Member']];
+async function start() {
+  ME = await api('/auth/me');
+  SET = await (await fetch('/api/public/settings')).json();
+  $('pin').classList.add('hidden'); $('app').classList.remove('hidden');
+  const nav = ME.role === 'owner' ? NAV_OWNER : NAV_STAFF;
+  $('whoTop').textContent = ME.role === 'owner' ? 'Owner' : ME.name; $('whoSide').textContent = ME.role === 'owner' ? 'Owner' : 'Staff · ' + ME.name;
+  const btns = nav.map(([k, t]) => `<button data-nav="${k}">${t}</button>`).join('');
+  $('navSide').innerHTML = btns; $('navTop').innerHTML = nav.length > 1 ? btns : '';
+  document.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => go(b.dataset.nav));
+  go(ME.role === 'owner' ? 'dashboard' : 'scan');
+}
+let PREV = 'scan';
+function go(v, arg) {
+  if (v !== 'scan') stopCam();
+  if (v === 'member' && VIEW && VIEW !== 'member') PREV = VIEW;
+  VIEW = v;
+  document.querySelectorAll('[data-nav]').forEach((b) => b.classList.toggle('on', b.dataset.nav === v || (v === 'member' && b.dataset.nav === 'scan')));
+  $('view').innerHTML = '<div style="display:flex;justify-content:center;padding:60px"><div class="spinner"></div></div>';
+  scrollTo(0, 0);
+  Promise.resolve(VIEWS[v](arg)).catch((e) => { $('view').innerHTML = `<div class="error">${esc(e.message)}</div>`; });
+}
+const set = (html) => { $('view').innerHTML = html; };
+const on = (id, ev, fn) => { const el = $(id); if (el) el[ev] = fn; };
+
+// ============ DIALOG HELPER ============
+// Opens a form dialog; keeps it open with the error message until the action succeeds or is closed.
+function act(title, fieldsHtml, submitLabel, fn, danger) {
+  return new Promise((resolve) => {
+    const d = $('dlg'), f = $('dlgForm');
+    f.innerHTML = `<div class="row between"><h2>${title}</h2><button type="button" class="link" id="dlgX">Close</button></div>${fieldsHtml}<div id="dlgErr" class="error hidden" role="alert"></div><button class="btn ${danger ? 'btn-danger' : 'btn-green'} full" id="dlgGo">${submitLabel}</button>`;
+    d.showModal();
+    $('dlgX').onclick = () => { d.close(); resolve(false); };
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(f).entries());
+      f.querySelectorAll('input[type=checkbox]').forEach((c) => { if (c.name) data[c.name] = c.checked; });
+      $('dlgGo').disabled = true;
+      try { await fn(data); d.close(); resolve(true); }
+      catch (err) { $('dlgErr').textContent = err.message; $('dlgErr').classList.remove('hidden'); $('dlgGo').disabled = false; }
+    };
+  });
+}
+const reasonField = '<div class="field"><label class="label" for="f_reason">Reason (required, kept in the audit log)</label><input id="f_reason" name="reason" required maxlength="300"></div>';
+
+// ============ RANGE HELPER ============
+let RANGE = { key: 'month' };
+function rangeOf(k, from, to) {
+  const n = new Date(); const sod = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  if (k === 'today') return [sod, new Date(+sod + 864e5)];
+  if (k === 'week') { const d = new Date(sod); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return [d, new Date(+sod + 864e5)]; }
+  if (k === 'month') return [new Date(n.getFullYear(), n.getMonth(), 1), new Date(+sod + 864e5)];
+  if (k === 'year') return [new Date(n.getFullYear(), 0, 1), new Date(+sod + 864e5)];
+  return [new Date(from + 'T00:00'), new Date(new Date(to + 'T00:00').getTime() + 864e5)];
+}
+function rangeBar(id) {
+  const k = RANGE.key;
+  return `<div class="row wrap-row" style="gap:8px"><div class="seg" id="${id}">${[['today', 'Today'], ['week', 'This week'], ['month', 'This month'], ['year', 'This year'], ['custom', 'Custom']].map(([a, b]) => `<button data-r="${a}" class="${k === a ? 'on' : ''}">${b}</button>`).join('')}</div>
+    <div class="row ${k === 'custom' ? '' : 'hidden'}" id="${id}C"><input type="date" id="${id}F" value="${RANGE.from || ''}" style="height:40px;width:auto"><span>to</span><input type="date" id="${id}T" value="${RANGE.to || ''}" style="height:40px;width:auto"><button class="btn btn-green btn-sm" id="${id}Go">Apply</button></div></div>`;
+}
+function bindRange(id, reload) {
+  document.querySelectorAll(`#${id} button`).forEach((b) => b.onclick = () => { RANGE.key = b.dataset.r; if (b.dataset.r !== 'custom') reload(); else { document.querySelectorAll(`#${id} button`).forEach((x) => x.classList.toggle('on', x === b)); $(id + 'C').classList.remove('hidden'); } });
+  on(id + 'Go', 'onclick', () => { RANGE.from = $(id + 'F').value; RANGE.to = $(id + 'T').value; if (RANGE.from && RANGE.to) reload(); });
+}
+const rangeQS = () => { const [a, b] = rangeOf(RANGE.key, RANGE.from, RANGE.to); return `from=${encodeURIComponent(a.toISOString())}&to=${encodeURIComponent(b.toISOString())}`; };
+
+// ============ VIEWS ============
+const VIEWS = {};
+
+// ---------- Dashboard ----------
+VIEWS.dashboard = async () => {
+  const [a, t, tx] = await Promise.all([api('/owner/analytics?' + (RANGE.key = 'month', rangeQS())), api('/staff/today'), api('/owner/transactions?' + rangeQS())]);
+  set(`<div class="row between wrap-row" style="margin-bottom:14px"><div><div class="eyebrow">Dashboard</div><h1>Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}</h1></div>
+      <div class="row"><button class="btn btn-gold" id="dScan">Scan member</button><button class="btn btn-light" id="dMsg">Send message</button></div></div>
+    <div class="cards">
+      <div class="metric"><div class="k">Today</div><div class="v">${M(t.sales)}</div><div class="s">${t.purchases} purchases · ${t.joins} joined</div></div>
+      <div class="metric"><div class="k">Members</div><div class="v">${a.members.total}</div><div class="s">${a.members.newThisMonth} new this month</div></div>
+      ${SET.tiers.map((x) => `<div class="metric"><span class="badge tier-${x.key}">${esc(x.name)}</span><div class="v">${a.members[x.key]}</div></div>`).join('')}
+      <div class="metric"><div class="k">Sales this month</div><div class="v">${M(a.sales)}</div><div class="s">eligible member sales</div></div>
+      <div class="metric"><div class="k">Cashback issued</div><div class="v">${M(a.issued)}</div><div class="s">${a.costPercent}% of sales</div></div>
+      <div class="metric"><div class="k">Cashback redeemed</div><div class="v">${M(a.redeemed)}</div></div>
+      <div class="metric"><div class="k">Outstanding balances</div><div class="v">${M(a.outstanding)}</div><div class="s">+ ${M(a.lockedWelcome)} locked welcome</div></div>
+    </div>
+    <div class="grid2" style="margin-top:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <div class="stack" style="gap:8px"><h3>Recent transactions</h3><div class="list">${tx.events.slice(0, 8).map(evRow).join('') || '<div class="li muted">No transactions yet this month.</div>'}</div></div>
+      <div class="stack" style="gap:8px"><h3>Close to the next level</h3><div class="list">${a.approaching.slice(0, 8).map((x) => `<button class="li" data-mem="${x.id}"><span><b>${esc(x.name)}</b> <span class="small muted">#${x.id}</span></span><span class="small">${M(x.next.remaining)} to <span class="badge tier-${SET.tiers.find((t) => t.name === x.next.name)?.key}">${esc(x.next.name)}</span></span></button>`).join('') || '<div class="li muted">Nobody close to an upgrade right now.</div>'}</div></div>
+    </div>`);
+  on('dScan', 'onclick', () => go('scan')); on('dMsg', 'onclick', () => go('campaigns'));
+  bindMem();
+};
+function evRow(e) {
+  const typeLabel = { purchase: e.cat, refund: 'Refund', reversal: 'Correction', welcome: 'Welcome reward', 'welcome-unlock': 'Welcome unlocked', birthday: 'Birthday reward', complimentary: 'Complimentary', adjustment: 'Adjustment', expire: 'Expired', tier: e.label, stamp: e.label }[e.type] || e.type;
+  const amt = e.type === 'purchase' ? `${M(e.paid)}${e.earned ? ` <span class="pos">+${M(e.earned)}</span>` : ''}${e.red ? ` <span class="neg">−${M(e.red)}</span>` : ''}`
+    : e.rew ? `<span class="pos">+${M(e.rew)}</span>` : e.exp ? `<span class="muted">−${M(e.exp)}</span>` : e.adj ? `<span class="${e.adj > 0 ? 'pos' : 'neg'}">${e.adj > 0 ? '+' : '−'}${M(Math.abs(e.adj))}</span>` : e.refund ? `<span class="neg">−${M(e.refund)}</span>` : '';
+  return `<button class="li" data-mem="${e.m}"><span><b>${esc(e.name || e.m)}</b><br><span class="small muted">${esc(typeLabel || '')} · ${ft(e.at)}${e.by ? ' · ' + esc(e.by) : ''}</span></span><span class="right small" style="font-weight:600">${amt}</span></button>`;
+}
+const bindMem = () => document.querySelectorAll('[data-mem]').forEach((b) => b.onclick = () => go('member', b.dataset.mem));
+
+// ---------- Scan ----------
+let stream = null, scanning = false;
+const canvas = document.createElement('canvas'), cctx = canvas.getContext('2d', { willReadFrequently: true });
+VIEWS.scan = async () => {
+  set(`<div class="eyebrow">Scan member</div><h1 style="margin-bottom:14px">Find a member</h1>
+    <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start">
+      <div class="stack"><div class="cam"><video id="video" playsinline muted class="hidden"></video><div class="frame"></div>
+        <button id="camStart" class="btn btn-gold" style="position:absolute">Open camera</button>
+        <div id="camMsg" style="position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:13px;color:var(--sage)">Scan the QR code on the customer's card</div></div>
+        <p class="small muted">Scanning only finds the member. Nothing is added or redeemed until you confirm a purchase.</p></div>
+      <div class="stack">
+        <form id="findForm" class="stack" style="gap:8px"><label class="label" for="q">Or search by name, member no. or phone</label>
+          <div class="row"><input id="q" placeholder="e.g. Michelle, CD1001, 71 234 567" autocomplete="off"><button class="btn btn-green" style="flex:none">Search</button></div></form>
+        <div id="found"></div>
+        <div class="panel" id="todayBox"><span class="label">Today</span><div id="today" class="small muted" style="margin-top:4px">…</div></div>
+      </div></div>`);
+  on('camStart', 'onclick', startCam);
+  $('findForm').onsubmit = (e) => { e.preventDefault(); find($('q').value); };
+  api('/staff/today').then((t) => { $('today').innerHTML = `${t.purchases} purchases · ${M(t.sales)} paid · ${M(t.earned)} cashback earned · ${M(t.redeemed)} redeemed · ${t.joins} new members`; }).catch(() => {});
+  $('q').focus();
+};
+async function startCam() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false });
+    const v = $('video'); v.srcObject = stream; v.classList.remove('hidden'); await v.play();
+    $('camStart').classList.add('hidden'); scanning = true; requestAnimationFrame(tick);
+  } catch (e) { $('camMsg').textContent = 'Camera unavailable — allow camera access, or search instead.'; }
+}
+function stopCam() { scanning = false; if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; } }
+let lastScan = 0;
+function tick(ts) {
+  if (!scanning) return;
+  const v = $('video');
+  if (v && v.readyState >= 2 && ts - lastScan > 120 && window.jsQR) {
+    lastScan = ts;
+    const w = 480, h = Math.round(w * v.videoHeight / v.videoWidth) || 360;
+    canvas.width = w; canvas.height = h; cctx.drawImage(v, 0, 0, w, h);
+    const code = jsQR(cctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
+    if (code?.data) { navigator.vibrate?.(60); stopCam(); find(code.data); return; }
+  }
+  requestAnimationFrame(tick);
+}
+async function find(q) {
+  if (!q.trim()) return;
+  try {
+    const d = await api('/staff/find?q=' + encodeURIComponent(q));
+    if (d.member) { SET = d.settings; return go('member', d.member.id); }
+    $('found').innerHTML = `<div class="list">${d.matches.map((x) => `<button class="li" data-mem="${x.id}"><span><b>${esc(x.name)}</b> <span class="small muted">#${x.id} · ${esc(x.phone)}</span></span><span class="badge tier-${x.tier}">${esc(tierName(x.tier))}</span></button>`).join('')}</div>`;
+    bindMem();
+  } catch (e) { const f = $('found'); if (f) f.innerHTML = `<div class="error">${esc(e.message)}</div>`; else toast(e.message); }
+}
+
+// ---------- Member ----------
+VIEWS.member = async (id) => {
+  const d = await api('/staff/member?id=' + encodeURIComponent(id));
+  SET = d.settings; CURRENT = d.member; CURRENT.campaigns = d.campaigns;
+  renderMember();
+};
+function renderMember() {
+  scrollTo(0, 0);
+  const m = CURRENT, own = ME.role === 'owner', st = m.stamps;
+  const canRefund = ME.perms.refund;
+  set(`<div class="row between wrap-row" style="margin-bottom:12px"><button class="link" id="mBack">‹ ${ME.role === 'owner' && PREV !== 'scan' ? 'Back' : 'Scan next'}</button><span class="pill" style="background:var(--pos-bg);color:var(--pos)">● Member identified</span></div>
+  <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px;align-items:start">
+    <div class="stack">
+      <div class="mcard tier-${m.tier}">
+        <div class="row between" style="align-items:flex-start"><span class="plaque"><img src="/logo.png" alt="Château Douma" style="height:30px"></span><span class="badge" style="background:rgba(255,255,255,.45)">${esc(m.tierName)}</span></div>
+        <div class="serif" style="font-size:30px;margin-top:16px;line-height:1.05">${esc(m.name)}</div>
+        <div class="v" style="margin-top:2px">#${m.id} · ${m.rate}% cashback${m.tierLocked ? ' · level fixed' : ''}</div>
+        <div class="row between" style="margin-top:16px;align-items:flex-end"><div><div class="k">Available cashback</div><div class="serif" style="font-size:38px;line-height:1">${M(m.available)}</div></div>
+        ${m.locked ? `<div class="right"><div class="k">Locked welcome</div><div class="v">${M(m.locked)}</div></div>` : ''}</div>
+        ${m.status !== 'active' ? '<div class="pill" style="margin-top:10px;background:#fff;color:#8A3B32">SUSPENDED — cannot earn or redeem</div>' : ''}
+      </div>
+      <div class="grid3">
+        <div class="metric"><div class="k">Lifetime spend</div><div class="v" style="font-size:18px">${M(m.spend)}</div></div>
+        <div class="metric"><div class="k">Visits</div><div class="v" style="font-size:18px">${m.visits}</div></div>
+        <div class="metric"><div class="k">Last visit</div><div class="v" style="font-size:15px">${m.lastVisit ? fd(m.lastVisit) : 'First visit'}</div></div>
+      </div>
+      ${m.next ? `<div class="panel stack" style="gap:6px"><div class="tbar"><i style="width:${(m.next.progress * 100).toFixed(1)}%"></i></div><span class="small">${M(m.next.remaining)} to <b>${esc(m.next.name)}</b></span></div>` : ''}
+      <div class="panel small stack" style="gap:6px">
+        <div class="row between"><span class="muted">Phone</span><span>${m.phone ? (m.phone.startsWith('…') ? esc(m.phone) : '+' + esc(m.phone)) : '—'} ${m.verified.phone ? '<span class="pill" style="background:var(--pos-bg);color:var(--pos)">verified</span>' : ''}</span></div>
+        <div class="row between"><span class="muted">Member since</span><span>${fd(m.joinedAt)}</span></div>
+        ${m.dob ? `<div class="row between"><span class="muted">Birthday</span><span>${esc(m.dob)}</span></div>` : ''}
+      </div>
+    </div>
+    <div class="stack">
+      <button class="btn btn-gold full" id="addPurchase" ${m.status !== 'active' ? 'disabled' : ''} style="min-height:58px;font-size:17px">Add purchase</button>
+      ${CURRENT.campaigns?.length ? `<div class="panel small" style="border-color:var(--gold-light)"><b>Active now:</b> ${CURRENT.campaigns.map((c) => esc(c.name)).join(', ')}</div>` : ''}
+      ${st && (st.glassRewards || st.bottleRewards) ? `<div class="panel row between"><span><b>Free drink ready</b><br><span class="small muted">${st.glassRewards} glass · ${st.bottleRewards} bottle</span></span><span class="row">${st.glassRewards ? '<button class="btn btn-green btn-sm" data-free="glass">Give glass</button>' : ''}${st.bottleRewards ? '<button class="btn btn-green btn-sm" data-free="bottle">Give bottle</button>' : ''}</span></div>` : st ? `<div class="small muted">Stamp cards: ${st.glasses}/${st.goal} glasses · ${st.bottles}/${st.goal} bottles</div>` : ''}
+      ${m.pendingSignIn ? `<div class="panel stack" style="gap:8px;border:2px solid var(--gold)"><b>Sign-in request</b><span class="small muted">The customer is opening their card on a new phone. Check it is really them, then type the 6-digit code shown on their screen.</span><div class="row"><input id="siCode" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="max-width:170px"><button class="btn btn-green btn-sm" id="siOk">Confirm sign-in</button></div></div>` : `<details class="small"><summary class="muted" style="cursor:pointer">Customer signing in on a new phone?</summary><div class="row" style="margin-top:8px"><input id="siCode" inputmode="numeric" maxlength="6" placeholder="Code on their screen" style="max-width:190px"><button class="btn btn-green btn-sm" id="siOk">Confirm</button></div></details>`}
+      <button class="btn btn-light full" id="cardLink">Send card link to the customer (WhatsApp)</button>
+      ${!m.verified.phone ? `<div class="panel stack" style="gap:8px"><b>Verify phone number</b><span class="small muted">Needed to unlock the welcome reward. Send a code by WhatsApp; the customer reads it back to you.</span><div class="row wrap-row"><button class="btn btn-light btn-sm" id="vSend">Send code (WhatsApp)</button><input id="vCode" inputmode="numeric" placeholder="6-digit code" style="height:40px;max-width:150px"><button class="btn btn-green btn-sm" id="vOk">Confirm</button></div></div>` : ''}
+      ${own ? `<div class="row wrap-row" style="gap:8px">
+        <button class="btn btn-light btn-sm" data-o="comp">Complimentary cashback</button><button class="btn btn-light btn-sm" data-o="adj">Adjust balance</button>
+        <button class="btn btn-light btn-sm" data-o="tier">Change level</button><button class="btn btn-light btn-sm" data-o="status">${m.status === 'active' ? 'Suspend' : 'Reactivate'}</button>
+        <button class="btn btn-light btn-sm" data-o="edit">Edit details</button><button class="btn btn-light btn-sm" data-o="note">Add note</button>
+        <button class="btn btn-light btn-sm" data-o="msg">Send message</button><button class="btn btn-light btn-sm" data-o="csv">Export history</button></div>` : ''}
+      ${own && m.notes?.length ? `<div class="panel stack" style="gap:6px"><span class="label">Internal notes</span>${m.notes.slice().reverse().map((n) => `<div class="small"><b>${esc(n.by)}</b> · ${ft(n.at)}<br>${esc(n.text)}</div>`).join('')}</div>` : ''}
+      <div class="row between" style="margin-top:4px"><h3>Transaction history</h3>${own ? '' : '<span class="small muted">Latest 15</span>'}</div>
+      <div class="list">${m.transactions.map((x) => txLine(x, own, canRefund)).join('') || '<div class="li muted">No transactions yet.</div>'}</div>
+    </div></div>`);
+  on('mBack', 'onclick', () => go(ME.role === 'owner' ? PREV : 'scan'));
+  on('addPurchase', 'onclick', () => purchaseFlow());
+  document.querySelectorAll('[data-free]').forEach((b) => b.onclick = async () => { try { const d = await api('/staff/stamp-redeem', { memberId: m.id, kind: b.dataset.free }); CURRENT = { ...d.member, campaigns: CURRENT.campaigns }; toast('Free ' + b.dataset.free + ' recorded'); renderMember(); } catch (e) { toast(e.message); } });
+  on('siOk', 'onclick', async () => { try { const d = await api('/staff/login-approve', { memberId: m.id, code: $('siCode').value }); CURRENT = { ...d.member, campaigns: CURRENT.campaigns }; toast('Signed in — the card is opening on their phone'); renderMember(); } catch (e) { toast(e.message); } });
+  on('cardLink', 'onclick', async () => { try { const d = await api('/staff/card-link', { memberId: m.id }); window.open(d.whatsapp, '_blank'); } catch (e) { toast(e.message); } });
+  on('vSend', 'onclick', async () => { try { const d = await api('/staff/verify/start', { memberId: m.id }); window.open(d.whatsapp, '_blank'); toast('WhatsApp opened with the code'); } catch (e) { toast(e.message); } });
+  on('vOk', 'onclick', async () => { try { const d = await api('/staff/verify/confirm', { memberId: m.id, code: $('vCode').value }); CURRENT = { ...d.member, campaigns: CURRENT.campaigns }; toast('Phone verified'); renderMember(); } catch (e) { toast(e.message); } });
+  document.querySelectorAll('[data-o]').forEach((b) => b.onclick = () => ownerAction(b.dataset.o));
+  document.querySelectorAll('[data-refund]').forEach((b) => b.onclick = () => refundFlow(b.dataset.refund));
+  document.querySelectorAll('[data-reverse]').forEach((b) => b.onclick = () => reverseFlow(b.dataset.reverse));
+}
+function txLine(x, own, canRefund) {
+  const p = [];
+  if (x.type === 'purchase') {
+    p.push(`Invoice ${M(x.invoice)} · paid ${M(x.paid)}`);
+    if (x.redeemed) p.push(`<span class="neg">−${M(x.redeemed)} redeemed</span>`);
+    if (x.earned) p.push(`<span class="pos">+${M(x.earned)} earned</span>`);
+    if (x.refunded) p.push(`<span class="neg">refunded ${M(x.refunded)}</span>`);
+  } else if (x.reward) p.push(`<span class="pos">+${M(x.reward)}</span>${x.locked ? ' (locked)' : ''}`);
+  else if (x.expired) p.push(`<span class="muted">−${M(x.expired)} expired</span>`);
+  else if (x.adjust) p.push(`<span class="${x.adjust > 0 ? 'pos' : 'neg'}">${x.adjust > 0 ? '+' : '−'}${M(Math.abs(x.adjust))}</span>`);
+  if (x.refund) p.push(`Refunded ${M(x.refund)}${x.restored ? ` · <span class="pos">+${M(x.restored)} returned</span>` : ''}${x.earnedReversed ? ` · <span class="neg">−${M(x.earnedReversed)} reversed</span>` : ''}${x.cashRefund !== undefined ? ` · cash back ${M(x.cashRefund)}` : ''}${x.shortfall ? ` · ${M(x.shortfall)} kept (cashback already spent)` : ''}`);
+  const canRef = x.type === 'purchase' && canRefund && (x.refunded || 0) < x.invoice;
+  const canRev = own && ['complimentary', 'adjustment', 'birthday'].includes(x.type) && !x.reversedBy;
+  return `<div class="li" style="align-items:flex-start"><div class="grow"><b>${esc(x.type === 'purchase' ? x.category : x.label)}</b>${x.invoiceRef ? ` <span class="small muted">${esc(x.invoiceRef)}</span>` : ''}
+    <div class="small muted">${ft(x.at)}${x.by ? ' · ' + esc(x.by) : ''}</div><div class="small" style="margin-top:3px">${p.join(' · ')}</div>${x.reason || x.notes ? `<div class="small muted" style="margin-top:2px">“${esc(x.reason || x.notes)}”</div>` : ''}</div>
+    <div class="stack right" style="gap:4px;align-items:flex-end">${x.balance !== undefined && x.type !== 'tier' ? `<span class="small muted">bal. ${M(x.balance)}</span>` : ''}${canRef ? `<button class="btn btn-ghost btn-sm" data-refund="${x.id}">Refund</button>` : ''}${canRev ? `<button class="btn btn-ghost btn-sm" data-reverse="${x.id}">Reverse</button>` : ''}</div></div>`;
+}
+
+// ---------- Purchase flow ----------
+function purchaseFlow() {
+  const m = CURRENT, st = SET.stamps;
+  const key = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
+  set(`<div class="row between" style="margin-bottom:10px"><button class="link" id="pBack">‹ Cancel</button><span class="badge tier-${m.tier}">${esc(m.tierName)} · ${m.rate}%</span></div>
+  <h1>Add purchase</h1><p class="muted" style="margin:4px 0 14px">${esc(m.name)} · #${m.id} · available ${M(m.available)}</p>
+  <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:start">
+    <form id="pf" class="stack" style="gap:14px" novalidate>
+      <div class="field"><label class="label" for="inv">Total invoice amount (${esc(SET.currency.code)}, after discounts)</label><input id="inv" inputmode="decimal" placeholder="0.00" autocomplete="off" style="font-size:22px;height:56px"></div>
+      <div class="field"><label class="label" for="cat">Purchase category</label><select id="cat">${SET.categories.map((c) => `<option value="${esc(c.name)}">${esc(c.name)}${c.eligible ? '' : ' (no cashback)'}</option>`).join('')}</select></div>
+      <details><summary class="small" style="cursor:pointer;color:var(--gold-text);font-weight:600">Invoice includes items that earn no cashback?</summary><div class="field" style="margin-top:8px"><label class="label" for="ne">Amount of non-eligible items</label><input id="ne" inputmode="decimal" placeholder="0.00"><span class="small muted">${esc(SET.excludedProducts || '')}</span></div></details>
+      <div class="field"><label class="label" for="ref">Invoice / receipt reference</label><input id="ref" placeholder="e.g. 10452" autocomplete="off"></div>
+      ${ME.perms.redeem ? `<div class="field"><span class="label">Redeem cashback</span>
+        <div class="seg" id="redSeg"><button type="button" data-red="none" class="on">Don't redeem</button><button type="button" data-red="all">Full balance</button><button type="button" data-red="custom">Custom amount</button></div>
+        <input id="redAmt" inputmode="decimal" placeholder="Amount to redeem" class="hidden"></div>` : ''}
+      ${st.enabled ? `<div class="field"><span class="label">Stamp cards</span><div class="row wrap-row" style="gap:18px">
+        <div class="step"><span class="small">Glasses</span><button type="button" data-st="g-">−</button><b id="gN">0</b><button type="button" data-st="g+">+</button></div>
+        <div class="step"><span class="small">Bottles</span><button type="button" data-st="b-">−</button><b id="bN">0</b><button type="button" data-st="b+">+</button></div></div></div>` : ''}
+      <div class="field"><label class="label" for="notes">Notes (optional)</label><input id="notes" maxlength="300"></div>
+    </form>
+    <div class="panel stack" style="gap:2px;position:sticky;top:12px" id="preview"><span class="label">Calculation</span><p class="muted small" style="padding:10px 0">Enter the invoice amount.</p></div>
+  </div>`);
+  let red = 'none', g = 0, b = 0, q = null, timer;
+  on('pBack', 'onclick', renderMember);
+  document.querySelectorAll('[data-red]').forEach((x) => x.onclick = () => { red = x.dataset.red; document.querySelectorAll('[data-red]').forEach((y) => y.classList.toggle('on', y === x)); $('redAmt').classList.toggle('hidden', red !== 'custom'); refresh(); });
+  document.querySelectorAll('[data-st]').forEach((x) => x.onclick = () => { const k = x.dataset.st; if (k === 'g+') g++; if (k === 'g-') g = Math.max(0, g - 1); if (k === 'b+') b++; if (k === 'b-') b = Math.max(0, b - 1); $('gN').textContent = g; $('bN').textContent = b; });
+  ['inv', 'ne', 'redAmt', 'cat'].forEach((id) => { const el = $(id); if (el) el.oninput = el.onchange = () => { clearTimeout(timer); timer = setTimeout(refresh, 250); }; });
+  const body = () => ({ memberId: m.id, invoice: toMoney($('inv').value), nonEligible: toMoney($('ne').value), category: $('cat').value, redeem: red === 'none' ? '' : red === 'all' ? (q ? q.maxRedeem / 100 : '') : toMoney($('redAmt').value) });
+  async function refresh() {
+    if (!$('inv') || !parseFloat(toMoney($('inv').value))) { $('preview').innerHTML = '<span class="label">Calculation</span><p class="muted small" style="padding:10px 0">Enter the invoice amount.</p>'; q = null; return; }
+    try {
+      if (red === 'all' && !q) { const pre = await api('/staff/quote', { ...body(), redeem: '' }); q = pre.quote; }
+      q = (await api('/staff/quote', body())).quote;
+      $('preview').innerHTML = summary(q) + `<button class="btn btn-green full" id="review" style="margin-top:12px">Review & confirm</button>`;
+      on('review', 'onclick', review);
+    } catch (e) { $('preview').innerHTML = `<span class="label">Calculation</span><div class="error" style="margin-top:8px">${esc(e.message)}</div>`; q = null; }
+  }
+  function review() {
+    const ref = $('ref').value.trim();
+    if (!ref) { $('ref').focus(); return toast('Enter the invoice or receipt reference'); }
+    const payload = { ...body(), invoiceRef: ref, notes: $('notes').value, glasses: g, bottles: b, txKey: key };
+    scrollTo(0, 0);
+    set(`<button class="link" id="rBack">‹ Edit</button><h1 style="margin:6px 0 4px">Confirm purchase</h1><p class="muted" style="margin-bottom:14px">${esc(m.name)} · #${m.id} · invoice ${esc(ref)}</p>
+      <div class="panel" style="max-width:520px">${summary(q)}${g || b ? `<div class="sum"><span>Stamps</span><b>${g ? '+' + g + ' glass ' : ''}${b ? '+' + b + ' bottle' : ''}</b></div>` : ''}
+        <div class="row" style="margin-top:14px"><button class="btn btn-ghost" id="rCancel">Back</button><button class="btn btn-gold grow" id="rGo" style="min-height:56px;font-size:17px">Confirm ${M(q.paid)} payment</button></div></div>`);
+    on('rBack', 'onclick', () => { purchaseFlow(); });
+    on('rCancel', 'onclick', () => { purchaseFlow(); });
+    on('rGo', 'onclick', async () => {
+      $('rGo').disabled = true; $('rGo').textContent = 'Saving…';
+      try {
+        const d = await api('/staff/purchase', payload);
+        CURRENT = { ...d.member, campaigns: CURRENT.campaigns };
+        const e = d.entry;
+        scrollTo(0, 0);
+        set(`<div class="stack center" style="align-items:center;max-width:520px;margin:20px auto;gap:14px">
+          <div class="pill" style="background:var(--pos-bg);color:var(--pos);font-size:13px">✓ Purchase recorded${d.duplicate ? ' (already saved)' : ''}</div>
+          <h1>${M(e.paid)} paid</h1>
+          <div class="panel" style="width:100%">
+            <div class="sum"><span>Cashback redeemed</span><b class="${e.redeemed ? 'neg' : ''}">${e.redeemed ? '−' : ''}${M(e.redeemed || 0)}</b></div>
+            <div class="sum"><span>Cashback earned</span><b class="pos">+${M(e.earned || 0)}</b></div>
+            <div class="sum big"><span>New wallet balance</span><span>${M(e.balance)}</span></div></div>
+          ${d.tierChanged ? `<div class="mcard tier-${d.tierChanged.to}" style="width:100%;text-align:center"><div class="k">Membership upgraded</div><div class="serif" style="font-size:26px">${esc(tierName(d.tierChanged.to))}</div><div class="small">The new rate applies from the next purchase. The customer has been notified.</div></div>` : ''}
+          <div class="row" style="width:100%"><button class="btn btn-light grow" id="sMember">View member</button><button class="btn btn-green grow" id="sNext">Scan next</button></div></div>`);
+        on('sMember', 'onclick', renderMember); on('sNext', 'onclick', () => go('scan'));
+      } catch (e) { toast(e.message); $('rGo').disabled = false; $('rGo').textContent = 'Try again'; }
+    });
+  }
+  $('inv').focus();
+}
+function summary(q) {
+  return `<div class="sum"><span>Invoice amount</span><b>${M(q.invoice)}</b></div>
+    ${q.nonEligible ? `<div class="sum"><span>Not eligible for cashback</span><span>${M(q.nonEligible)}</span></div>` : ''}
+    <div class="sum"><span>Cashback redeemed</span><b class="${q.redeem ? 'neg' : ''}">${q.redeem ? '−' : ''}${M(q.redeem)}</b></div>
+    <div class="sum big"><span>Amount payable</span><span>${M(q.paid)}</span></div>
+    <div class="sum"><span>Membership</span><span class="badge tier-${q.tier}">${esc(q.tierName)}</span></div>
+    <div class="sum"><span>Cashback rate</span><b>${q.rate}%${q.bonus ? ` + campaign` : ''}</b></div>
+    ${q.bonuses.map((b) => `<div class="sum small"><span style="color:var(--gold-text)">${esc(b.name)}</span><span class="pos">+${M(b.extra)}</span></div>`).join('')}
+    <div class="sum"><span>Cashback earned</span><b class="pos">+${M(q.earned)}</b></div>
+    <div class="sum"><span>Previous wallet balance</span><span>${M(q.available)}</span></div>
+    <div class="sum big"><span>New wallet balance</span><span>${M(q.newBalance)}</span></div>
+    ${q.tierAfter !== q.tier ? `<div class="ok small" style="margin-top:8px">This purchase unlocks <b>${esc(q.tierAfterName)}</b> (applies to the next purchases).</div>` : ''}
+    <p class="small muted" style="margin-top:8px">Cashback earned now can be used from the next visit. Max redeemable on this invoice: ${M(q.maxRedeem)}.</p>`;
+}
+async function refundFlow(txId) {
+  const x = CURRENT.transactions.find((t) => t.id === txId);
+  const left = x.invoice - (x.refunded || 0);
+  const ok = await act(`Refund ${esc(x.invoiceRef)}`, `<p class="small muted">Invoice ${M(x.invoice)} · paid ${M(x.paid)} · cashback earned ${M(x.earned || 0)} · redeemed ${M(x.redeemed || 0)}. Up to ${M(left)} can still be refunded.</p>
+    <div class="field"><label class="label" for="f_amt">Amount to refund (leave empty for the full ${M(left)})</label><input id="f_amt" name="amount" inputmode="decimal"></div>${reasonField}
+    <p class="small muted">Cashback earned on the refunded part is removed; cashback used on it is returned to the wallet. If the earned cashback was already spent, it is deducted from the cash refund.</p>`, 'Process refund', async (f) => {
+    const d = await api('/staff/refund', { memberId: CURRENT.id, txId, amount: toMoney(f.amount), reason: f.reason });
+    CURRENT = { ...d.member, campaigns: CURRENT.campaigns };
+    toast(`Refund done — give back ${M(d.cashRefund)} in cash/card`);
+  }, true);
+  if (ok) renderMember();
+}
+async function reverseFlow(txId) {
+  const ok = await act('Reverse entry', `<p class="small muted">A correcting entry is added. The original stays in the history.</p>${reasonField}`, 'Reverse', async (f) => {
+    const d = await api('/owner/reverse', { memberId: CURRENT.id, txId, reason: f.reason }); CURRENT = { ...d.member, campaigns: CURRENT.campaigns };
+  }, true);
+  if (ok) { toast('Reversed'); renderMember(); }
+}
+async function ownerAction(k) {
+  const m = CURRENT; let ok = false;
+  const upd = (d) => { CURRENT = { ...d.member, campaigns: CURRENT.campaigns }; };
+  if (k === 'comp') ok = await act('Complimentary cashback', `<div class="field"><label class="label" for="f_a">Amount (${esc(SET.currency.code)})</label><input id="f_a" name="amount" inputmode="decimal" required></div>${reasonField}`, 'Add cashback', async (f) => upd(await api('/owner/adjust', { memberId: m.id, kind: 'complimentary', amount: toMoney(f.amount), reason: f.reason })));
+  if (k === 'adj') ok = await act('Adjust balance', `<div class="field"><label class="label" for="f_a">Amount (use − to deduct, e.g. -5)</label><input id="f_a" name="amount" inputmode="decimal" required></div>${reasonField}`, 'Apply adjustment', async (f) => upd(await api('/owner/adjust', { memberId: m.id, kind: 'adjust', amount: toMoney(f.amount), reason: f.reason })));
+  if (k === 'tier') ok = await act('Change membership level', `<div class="field"><label class="label" for="f_t">Level</label><select id="f_t" name="tier">${SET.tiers.map((t) => `<option value="${t.key}" ${t.key === m.tier ? 'selected' : ''}>${esc(t.name)} (${t.rate}%)</option>`).join('')}</select></div>
+    <label class="row small"><input type="checkbox" name="lock" ${m.tierLocked ? 'checked' : ''}> Keep this level fixed (no automatic changes)</label>${reasonField}`, 'Change level', async (f) => upd(await api('/owner/tier', { memberId: m.id, tier: f.tier, lock: f.lock, reason: f.reason })));
+  if (k === 'status') ok = await act(m.status === 'active' ? 'Suspend membership' : 'Reactivate membership', `<p class="small muted">${m.status === 'active' ? 'A suspended member cannot earn or redeem cashback. The balance is kept.' : 'The member can earn and redeem again.'}</p>${reasonField}`, m.status === 'active' ? 'Suspend' : 'Reactivate', async (f) => upd(await api('/owner/status', { memberId: m.id, status: m.status === 'active' ? 'suspended' : 'active', reason: f.reason })), m.status === 'active');
+  if (k === 'edit') ok = await act('Edit details', `<div class="field"><label class="label">Full name</label><input name="name" value="${esc(m.name)}"></div><div class="field"><label class="label">Phone (with country code)</label><input name="phone" value="+${esc(m.phone)}"></div><div class="field"><label class="label">Date of birth</label><input type="date" name="dob" value="${esc(m.dob)}"></div>${reasonField}`, 'Save changes', async (f) => upd(await api('/owner/edit', { memberId: m.id, ...f })));
+  if (k === 'note') ok = await act('Internal note', `<div class="field"><label class="label">Note (only visible to the owner)</label><textarea name="text" rows="4" required></textarea></div>`, 'Save note', async (f) => upd(await api('/owner/note', { memberId: m.id, text: f.text })));
+  if (k === 'msg') ok = await act(`Message to ${esc(m.name)}`, `<div class="field"><label class="label">Title</label><input name="title" maxlength="80" required></div><div class="field"><label class="label">Message</label><textarea name="body" rows="4" maxlength="500" required></textarea></div>`, 'Send', async (f) => { await api('/owner/notify', { to: m.id, title: f.title, body: f.body }); toast('Message sent'); });
+  if (k === 'csv') return download('/owner/export?type=member&id=' + m.id);
+  if (ok) { toast('Saved'); renderMember(); }
+}
+
+// ---------- Customers ----------
+let CUST = [], CF = { q: '', tier: '', status: '', sort: 'id' };
+VIEWS.customers = async () => {
+  const d = await api('/owner/customers'); CUST = d.customers; SET = d.settings;
+  set(`<div class="row between wrap-row" style="margin-bottom:12px"><div><div class="eyebrow">Customers</div><h1>${CUST.length} members</h1></div><button class="btn btn-light" id="cCsv">Export (CSV / Excel)</button></div>
+    <div class="row wrap-row" style="margin-bottom:12px"><input id="cq" placeholder="Search name, number or phone" value="${esc(CF.q)}" style="max-width:320px">
+      <select id="ct" style="width:auto"><option value="">All levels</option>${SET.tiers.map((t) => `<option value="${t.key}" ${CF.tier === t.key ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
+      <select id="cs" style="width:auto"><option value="">Any status</option><option value="active" ${CF.status === 'active' ? 'selected' : ''}>Active</option><option value="suspended" ${CF.status === 'suspended' ? 'selected' : ''}>Suspended</option><option value="unverified" ${CF.status === 'unverified' ? 'selected' : ''}>Not verified</option></select>
+      <select id="co" style="width:auto">${[['id', 'Member no.'], ['name', 'Name'], ['spend', 'Highest spending'], ['available', 'Highest balance'], ['visits', 'Most visits'], ['last', 'Recently visited']].map(([a, b]) => `<option value="${a}" ${CF.sort === a ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
+    <div class="tablewrap"><table><thead><tr><th>No.</th><th>Name</th><th>Level</th><th>Balance</th><th>Spending</th><th>Visits</th><th>Last visit</th><th>Phone</th><th>Status</th></tr></thead><tbody id="cRows"></tbody></table></div>`);
+  const draw = () => {
+    const q = CF.q.toLowerCase(), qd = q.replace(/\D/g, '');
+    let l = CUST.filter((x) => (!q || x.name.toLowerCase().includes(q) || x.id.toLowerCase().includes(q.replace('#', '')) || (qd.length >= 3 && x.phone.includes(qd))) && (!CF.tier || x.tier === CF.tier) && (!CF.status || (CF.status === 'unverified' ? !x.verified : x.status === CF.status)));
+    const s = { id: (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }), name: (a, b) => a.name.localeCompare(b.name), spend: (a, b) => b.spend - a.spend, available: (a, b) => b.available - a.available, visits: (a, b) => b.visits - a.visits, last: (a, b) => (b.lastVisit || '').localeCompare(a.lastVisit || '') }[CF.sort];
+    l = l.sort(s);
+    $('cRows').innerHTML = l.map((x) => `<tr data-mem="${x.id}" style="cursor:pointer"><td>#${x.id}</td><td><b>${esc(x.name)}</b></td><td><span class="badge tier-${x.tier}">${esc(tierName(x.tier))}</span></td><td>${M(x.available)}</td><td>${M(x.spend)}</td><td>${x.visits}</td><td>${x.lastVisit ? fd(x.lastVisit) : '—'}</td><td>+${esc(x.phone)}</td><td>${x.status === 'active' ? (x.verified ? 'Active' : 'Active · not verified') : '<span class="neg">Suspended</span>'}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">No members match.</td></tr>';
+    bindMem();
+  };
+  ['cq', 'ct', 'cs', 'co'].forEach((id) => $(id).oninput = $(id).onchange = () => { CF = { q: $('cq').value, tier: $('ct').value, status: $('cs').value, sort: $('co').value }; draw(); });
+  on('cCsv', 'onclick', () => download('/owner/export?type=customers'));
+  draw();
+};
+
+// ---------- Transactions ----------
+VIEWS.transactions = async () => {
+  const d = await api('/owner/transactions?' + rangeQS());
+  set(`<div class="row between wrap-row" style="margin-bottom:12px"><div><div class="eyebrow">Transactions</div><h1>${d.total} entries</h1></div><button class="btn btn-light" id="tCsv">Export (CSV / Excel)</button></div>
+    <div style="margin-bottom:12px">${rangeBar('tr')}</div>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Member</th><th>Type</th><th>Invoice</th><th>Ref</th><th>Paid</th><th>Earned</th><th>Redeemed</th><th>Other</th><th>By</th></tr></thead><tbody>
+    ${d.events.map((e) => `<tr data-mem="${e.m}" style="cursor:pointer"><td>${ft(e.at)}</td><td><b>${esc(e.name)}</b> <span class="muted">#${e.m}</span></td><td>${esc(e.type === 'purchase' ? e.cat : e.label || e.type)}</td><td>${e.inv ? M(e.inv) : ''}</td><td>${esc(e.ref || '')}</td><td>${e.paid != null ? M(e.paid) : ''}</td><td class="pos">${e.earned ? '+' + M(e.earned) : ''}</td><td class="neg">${e.red ? '−' + M(e.red) : ''}</td>
+      <td>${e.rew ? `<span class="pos">+${M(e.rew)}</span>` : ''}${e.exp ? `<span class="muted">−${M(e.exp)} expired</span>` : ''}${e.adj ? `${e.adj > 0 ? '+' : '−'}${M(Math.abs(e.adj))}` : ''}${e.refund ? `refund ${M(e.refund)}` : ''}${e.type === 'tier' ? esc(e.label) : ''}</td><td>${esc(e.by || '')}</td></tr>`).join('') || '<tr><td colspan="10" class="muted">No transactions in this period.</td></tr>'}
+    </tbody></table></div>`);
+  bindRange('tr', () => go('transactions'));
+  on('tCsv', 'onclick', () => download('/owner/export?type=transactions&' + rangeQS()));
+  bindMem();
+};
+
+// ---------- Campaigns ----------
+VIEWS.campaigns = async () => {
+  const [d, msgs] = await Promise.all([api('/owner/campaigns'), api('/owner/messages')]);
+  SET = d.settings;
+  const status = (c) => !c.enabled ? ['Disabled', 'var(--muted2)'] : c.active ? ['Active now', 'var(--pos)'] : new Date(c.startAt) > new Date() ? ['Scheduled', 'var(--gold-text)'] : ['Ended', 'var(--muted2)'];
+  set(`<div class="row between wrap-row" style="margin-bottom:12px"><div><div class="eyebrow">Campaigns</div><h1>Cashback campaigns</h1></div><button class="btn btn-gold" id="cNew">New campaign</button></div>
+    <p class="small muted" style="margin-bottom:12px">Campaigns switch on and off automatically at their dates (${esc(SET.timezone)} time). ${SET.campaigns?.allowStacking ? 'Stackable campaigns can combine.' : 'Only the best campaign applies to each purchase (no stacking — change in Settings).'}</p>
+    <div class="list">${d.campaigns.map((c) => { const [t, col] = status(c); return `<button class="li" data-camp="${c.id}"><span><b>${esc(c.name)}</b><br><span class="small muted">${c.startLocal.replace('T', ' ')} → ${c.endLocal.replace('T', ' ')} · ${c.type === 'multiplier' ? c.value + '× cashback' : c.value + '% cashback'}${c.tiers.length ? ' · ' + c.tiers.map(tierName).join(', ') : ''}${c.categories.length ? ' · ' + c.categories.join(', ') : ''}</span></span><span class="small" style="font-weight:700;color:${col}">${t}</span></button>`; }).join('') || '<div class="li muted">No campaigns yet. Create one — e.g. "Double Cashback Weekend".</div>'}</div>
+    <h2 style="margin-top:26px">Announcements</h2><p class="small muted" style="margin:4px 0 10px">Send a message to every member who accepted news & offers. It appears in their card's inbox and as a phone notification when allowed.</p>
+    <div class="panel stack" style="max-width:620px"><div class="field"><label class="label" for="aT">Title</label><input id="aT" maxlength="80" placeholder="e.g. Harvest tasting this Saturday"></div><div class="field"><label class="label" for="aB">Message</label><textarea id="aB" rows="3" maxlength="500"></textarea></div><button class="btn btn-green" id="aGo">Send to all members</button></div>
+    <h2 style="margin-top:26px">Join QR poster</h2><p class="small muted" style="margin:4px 0 10px">Print it for the bar and tables. Guests scan it to join the club.</p>
+    <div id="poster" class="stack center" style="align-items:center;background:var(--ivory);border:1px solid var(--line);border-radius:20px;padding:28px 22px;max-width:380px;gap:12px">
+      <img src="/logo.png" alt="Château Douma" style="width:200px"><div class="eyebrow">Loyalty Club</div>
+      <div class="serif" style="font-size:28px;line-height:1.15">Earn cashback<br>on every visit</div>
+      <div id="joinQr" class="qrbox" style="width:210px;height:210px"></div>
+      <div class="small">${SET.tiers.map((t) => `${t.rate}%`).join(' · ')} cashback · ${M(SET.welcome.enabled ? SET.welcome.amount : 0)} welcome reward</div>
+      <div class="small muted" id="joinUrl"></div></div>
+    <button class="btn btn-gold" style="margin-top:10px" onclick="window.print()">Print poster</button>
+    <h3 style="margin-top:18px">Sent</h3><div class="list" style="margin-top:8px">${msgs.sent.map((x) => `<div class="li"><span><b>${esc(x.title)}</b><br><span class="small muted">${ft(x.at)} · ${esc(x.to)}</span></span><span class="small muted right">${x.recipients} members<br>${x.pushed} pop-ups</span></div>`).join('') || '<div class="li muted">Nothing sent yet.</div>'}</div>`);
+  { const url = location.origin + '/join'; const qq = qrcode(0, 'M'); qq.addData(url); qq.make(); $('joinQr').innerHTML = qq.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); $('joinUrl').textContent = url.replace(/^https?:\/\//, ''); }
+  on('cNew', 'onclick', () => campaignForm());
+  document.querySelectorAll('[data-camp]').forEach((b) => b.onclick = () => campaignForm(d.campaigns.find((c) => c.id === b.dataset.camp)));
+  let armed = 0;
+  on('aGo', 'onclick', async () => {
+    if (Date.now() - armed > 4000) { armed = Date.now(); $('aGo').textContent = 'Tap again to send to everyone'; return; }
+    try { const r = await api('/owner/notify', { to: 'all', title: $('aT').value, body: $('aB').value }); toast(`Sent to ${r.recipients} members`); go('campaigns'); } catch (e) { toast(e.message); }
+  });
+};
+async function campaignForm(c) {
+  const now = new Date(); const pad = (n) => String(n).padStart(2, '0');
+  const loc = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  c = c || { name: '', description: '', startLocal: loc(new Date(now.setMinutes(0))), endLocal: loc(new Date(Date.now() + 3 * 864e5)), type: 'multiplier', value: 2, tiers: [], categories: [], maxPerTxCents: 0, maxPerCustomerCents: 0, enabled: true, stackable: false };
+  const ideas = ['Double Cashback Weekend', 'Christmas Cashback', 'Independence Weekend Rewards', 'Exclusive Premium Member Rewards', 'Special Workshop Cashback', 'Extra Cashback on Selected Wines'];
+  const ok = await act(c.id ? 'Edit campaign' : 'New campaign', `
+    <div class="field"><label class="label">Campaign name</label><input name="name" value="${esc(c.name)}" list="ideas" required><datalist id="ideas">${ideas.map((i) => `<option value="${i}">`).join('')}</datalist></div>
+    <div class="field"><label class="label">Short description (shown to members)</label><input name="description" value="${esc(c.description || '')}"></div>
+    <div class="grid2"><div class="field"><label class="label">Starts (${esc(SET.timezone)})</label><input type="datetime-local" name="startLocal" value="${c.startLocal}" required></div><div class="field"><label class="label">Ends</label><input type="datetime-local" name="endLocal" value="${c.endLocal}" required></div></div>
+    <div class="grid2"><div class="field"><label class="label">Type</label><select name="type"><option value="multiplier" ${c.type === 'multiplier' ? 'selected' : ''}>Multiplier (e.g. 2× cashback)</option><option value="fixed" ${c.type === 'fixed' ? 'selected' : ''}>Fixed percentage</option></select></div><div class="field"><label class="label">Value (× or %)</label><input name="value" inputmode="decimal" value="${c.value}"></div></div>
+    <div class="field"><span class="label">Eligible levels (none ticked = all)</span><div class="chk">${SET.tiers.map((t) => `<label><input type="checkbox" name="tier_${t.key}" ${c.tiers.includes(t.key) ? 'checked' : ''}>${esc(t.name)}</label>`).join('')}</div></div>
+    <div class="field"><span class="label">Eligible categories (none ticked = all eligible)</span><div class="chk">${SET.categories.filter((x) => x.eligible).map((x, i) => `<label><input type="checkbox" name="cat_${i}" data-cat="${esc(x.name)}" ${c.categories.includes(x.name) ? 'checked' : ''}>${esc(x.name)}</label>`).join('')}</div></div>
+    <div class="grid2"><div class="field"><label class="label">Max bonus per purchase ($, 0 = none)</label><input name="maxPerTx" inputmode="decimal" value="${(c.maxPerTxCents || 0) / 100}"></div><div class="field"><label class="label">Max bonus per customer ($)</label><input name="maxPerCustomer" inputmode="decimal" value="${(c.maxPerCustomerCents || 0) / 100}"></div></div>
+    <label class="row small"><input type="checkbox" name="enabled" ${c.enabled ? 'checked' : ''}> Enabled</label>
+    <label class="row small"><input type="checkbox" name="stackable" ${c.stackable ? 'checked' : ''}> Can combine with other campaigns (only if stacking is allowed in Settings)</label>
+    ${c.id ? '<label class="row small"><input type="checkbox" name="announce"> Also send an announcement to members now</label>' : '<label class="row small"><input type="checkbox" name="announce"> Send an announcement to members now</label>'}`, 'Save campaign', async (f) => {
+    const cats = [...$('dlgForm').querySelectorAll('[data-cat]')].filter((x) => x.checked).map((x) => x.dataset.cat);
+    const body = { id: c.id, name: f.name, description: f.description, startLocal: f.startLocal, endLocal: f.endLocal, type: f.type, value: Number(toMoney(f.value)), tiers: SET.tiers.filter((t) => f['tier_' + t.key]).map((t) => t.key), categories: cats, maxPerTx: toMoney(f.maxPerTx), maxPerCustomer: toMoney(f.maxPerCustomer), enabled: f.enabled, stackable: f.stackable };
+    await api('/owner/campaigns', { campaign: body });
+    if (f.announce) { const l = (await api('/owner/campaigns')).campaigns; const saved = l.find((x) => x.name === body.name); if (saved) await api('/owner/campaigns/announce', { id: saved.id }); }
+  });
+  if (ok) { toast('Campaign saved'); go('campaigns'); }
+}
+
+// ---------- Analytics ----------
+VIEWS.analytics = async () => {
+  const a = await api('/owner/analytics?' + rangeQS());
+  const lst = (rows, f) => `<div class="list">${rows.map(f).join('') || '<div class="li muted">None</div>'}</div>`;
+  const max = Math.max(1, ...a.daily.map((x) => x[1]));
+  set(`<div class="row between wrap-row" style="margin-bottom:12px"><div><div class="eyebrow">Analytics</div><h1>Club performance</h1></div>
+      <div class="row wrap-row"><button class="btn btn-light btn-sm" data-x="analytics">Report CSV</button><button class="btn btn-light btn-sm" data-x="customers">Customers CSV</button><button class="btn btn-light btn-sm" data-x="transactions">Transactions CSV</button></div></div>
+    <div style="margin-bottom:14px">${rangeBar('an')}</div>
+    <div class="cards">
+      <div class="metric"><div class="k">Members</div><div class="v">${a.members.total}</div><div class="s">${a.members.newInRange} new in period · ${a.members.newThisMonth} this month</div></div>
+      ${SET.tiers.map((t) => `<div class="metric"><span class="badge tier-${t.key}">${esc(t.name)}</span><div class="v">${a.members[t.key]}</div></div>`).join('')}
+      <div class="metric"><div class="k">Eligible member sales</div><div class="v">${M(a.sales)}</div><div class="s">${a.purchases} purchases · ${a.customersBuying} customers</div></div>
+      <div class="metric"><div class="k">Cashback issued</div><div class="v pos">${M(a.issued)}</div></div>
+      <div class="metric"><div class="k">Cashback redeemed</div><div class="v">${M(a.redeemed)}</div></div>
+      <div class="metric"><div class="k">Cashback expired</div><div class="v" style="color:var(--muted2)">${M(a.expired)}</div></div>
+      <div class="metric"><div class="k">Outstanding balances</div><div class="v">${M(a.outstanding)}</div><div class="s">now, all members</div></div>
+      <div class="metric"><div class="k">Cashback cost</div><div class="v">${a.costPercent}%</div><div class="s">of eligible sales</div></div>
+      <div class="metric"><div class="k">Welcome rewards</div><div class="v">${a.welcome.count}</div><div class="s">${M(a.welcome.cents)}</div></div>
+      <div class="metric"><div class="k">Birthday rewards</div><div class="v">${a.birthday.count}</div><div class="s">${M(a.birthday.cents)}</div></div>
+      <div class="metric"><div class="k">Avg. spending</div><div class="v">${M(a.avgSpend)}</div><div class="s">per customer (lifetime)</div></div>
+      <div class="metric"><div class="k">Avg. visits</div><div class="v">${a.avgVisits}</div><div class="s">per customer</div></div>
+      <div class="metric"><div class="k">Return rate</div><div class="v">${a.returnRate}%</div><div class="s">came back at least twice</div></div>
+    </div>
+    <div class="panel" style="margin-top:16px"><span class="label">Daily eligible sales</span><div class="bars" aria-label="Daily sales chart">${a.daily.map(([d, v]) => `<i style="height:${Math.max(2, (v / max) * 100)}%" title="${d}: ${M(v)}"></i>`).join('') || '<span class="small muted">No sales in this period.</span>'}</div>${a.daily.length ? `<div class="row between small muted"><span>${a.daily[0][0]}</span><span>${a.daily.at(-1)[0]}</span></div>` : ''}</div>
+    <div class="grid2" style="margin-top:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+      <div class="stack" style="gap:8px"><h3>Highest-spending customers</h3>${lst(a.topSpenders, (x) => `<button class="li" data-mem="${x.id}"><span>${esc(x.name)} <span class="small muted">#${x.id}</span></span><b>${M(x.spend)}</b></button>`)}</div>
+      <div class="stack" style="gap:8px"><h3>Most frequent customers</h3>${lst(a.mostFrequent, (x) => `<button class="li" data-mem="${x.id}"><span>${esc(x.name)} <span class="small muted">#${x.id}</span></span><b>${x.visits} visit${x.visits === 1 ? '' : 's'}</b></button>`)}</div>
+      <div class="stack" style="gap:8px"><h3>Approaching next level</h3>${lst(a.approaching, (x) => `<button class="li" data-mem="${x.id}"><span>${esc(x.name)} <span class="small muted">#${x.id}</span></span><span class="small">${M(x.next.remaining)} to ${esc(x.next.name)}</span></button>`)}</div>
+      <div class="stack" style="gap:8px"><h3>Not visited recently</h3>${lst(a.inactive.slice(0, 15), (x) => `<button class="li" data-mem="${x.id}"><span>${esc(x.name)} <span class="small muted">#${x.id}</span></span><span class="small muted">${x.lastVisit ? 'last ' + fd(x.lastVisit) : 'never visited'}</span></button>`)}</div>
+    </div>`);
+  bindRange('an', () => go('analytics'));
+  document.querySelectorAll('[data-x]').forEach((b) => b.onclick = () => download(`/owner/export?type=${b.dataset.x}&${rangeQS()}`));
+  bindMem();
+};
+
+// ---------- Staff ----------
+VIEWS.staff = async () => {
+  const [d, au] = await Promise.all([api('/owner/staff'), api('/owner/audit?' + rangeQS())]);
+  set(`<div class="row between wrap-row" style="margin-bottom:12px"><div><div class="eyebrow">Staff</div><h1>Team & permissions</h1></div><button class="btn btn-gold" id="sNew">Add staff member</button></div>
+    <p class="small muted" style="margin-bottom:10px">Staff can scan members, record purchases and redeem cashback. Turn on extra permissions per person. Your owner PIN is set in Netlify and is never shown here.</p>
+    <div class="list">${d.staff.map((s) => `<div class="li"><span><b>${esc(s.name)}</b> ${s.active ? '' : '<span class="pill" style="background:var(--neg-bg);color:var(--neg)">Inactive</span>'}<br><span class="small muted">Purchases ✓ · Redeem ${s.perms.redeem !== false ? '✓' : '✗'} · Refunds ${s.perms.refund ? '✓' : '✗'} · Full history ${s.perms.history ? '✓' : '✗'}</span></span><button class="btn btn-light btn-sm" data-staff="${s.id}">Edit</button></div>`).join('')}
+      ${d.shared ? '<div class="li"><span><b>Shared staff PIN</b><br><span class="small muted">Set in Netlify (STAFF_PIN). Remove it there once everyone has a personal PIN.</span></span></div>' : ''}
+      ${!d.staff.length && !d.shared ? '<div class="li muted">No staff yet.</div>' : ''}</div>
+    <div class="row between wrap-row" style="margin-top:24px"><h2>Audit log</h2><button class="btn btn-light btn-sm" id="auCsv">Export audit log</button></div>
+    <div style="margin:10px 0">${rangeBar('au')}</div>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Who</th><th>Action</th><th>Member</th><th>Reason</th></tr></thead><tbody>${au.audit.map((x) => `<tr><td>${ft(x.at)}</td><td>${esc(x.by?.name || 'Customer/system')}</td><td>${esc(x.action)}</td><td>${esc(x.member || '')}</td><td>${esc(x.reason || '')}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No entries.</td></tr>'}</tbody></table></div>`);
+  bindRange('au', () => go('staff'));
+  on('auCsv', 'onclick', () => download('/owner/export?type=audit&' + rangeQS()));
+  const form = (s) => `<div class="field"><label class="label">Name</label><input name="name" value="${esc(s?.name || '')}" required></div>
+    <div class="field"><label class="label">${s ? 'New PIN (leave empty to keep)' : 'PIN (4–10 digits)'}</label><input name="pin" inputmode="numeric" pattern="\\d{4,10}" ${s ? '' : 'required'}></div>
+    <label class="row small"><input type="checkbox" name="redeem" ${s?.perms?.redeem === false ? '' : 'checked'}> Can redeem cashback</label>
+    <label class="row small"><input type="checkbox" name="refund" ${s?.perms?.refund ? 'checked' : ''}> Can process refunds</label>
+    <label class="row small"><input type="checkbox" name="history" ${s?.perms?.history ? 'checked' : ''}> Can see full transaction history</label>
+    ${s ? `<label class="row small"><input type="checkbox" name="active" ${s.active ? 'checked' : ''}> Active (untick to block access)</label>` : ''}`;
+  on('sNew', 'onclick', async () => { if (await act('Add staff member', form(), 'Add', async (f) => api('/owner/staff', { action: 'create', name: f.name, pin: f.pin, perms: { redeem: f.redeem, refund: f.refund, history: f.history } }))) { toast('Staff member added'); go('staff'); } });
+  document.querySelectorAll('[data-staff]').forEach((b) => b.onclick = async () => { const s = d.staff.find((x) => x.id === b.dataset.staff); if (await act('Edit ' + esc(s.name), form(s), 'Save', async (f) => api('/owner/staff', { action: 'update', id: s.id, name: f.name, pin: f.pin || undefined, active: f.active, perms: { redeem: f.redeem, refund: f.refund, history: f.history } }))) { toast('Saved'); go('staff'); } });
+};
+
+// ---------- Settings ----------
+VIEWS.settings = async () => {
+  const d = await api('/owner/settings'); const s = d.settings;
+  const money = (c) => (c / 100).toFixed(2);
+  set(`<div class="eyebrow">Settings</div><h1 style="margin-bottom:14px">Programme settings</h1>
+  <form id="sf" class="stack" style="gap:18px;max-width:760px" novalidate>
+    <div class="panel stack"><h3>Membership levels</h3>
+      ${s.tiers.map((t, i) => `<div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:end"><div class="field"><span class="badge tier-${t.key}" style="align-self:flex-start">${['Light red', 'Silver', 'Gold'][i]} card</span><input name="t${i}name" value="${esc(t.name)}" aria-label="Level ${i + 1} name"></div>
+        <div class="field"><label class="label">Cashback %</label><input name="t${i}rate" inputmode="decimal" value="${t.rate}"></div>
+        <div class="field"><label class="label">From spending ($)</label><input name="t${i}min" inputmode="decimal" value="${money(t.min)}" ${i === 0 ? 'disabled' : ''}></div></div>`).join('')}
+      <p class="small muted">Card colours stay fixed per level: light red, silver and gold. Rate changes apply to new purchases only.</p></div>
+    <div class="panel stack"><h3>Rewards</h3>
+      <div class="grid2"><label class="row small"><input type="checkbox" name="wOn" ${s.welcome.enabled ? 'checked' : ''}> Welcome reward</label><div class="field"><label class="label">Amount ($)</label><input name="wAmt" inputmode="decimal" value="${money(s.welcome.amount)}"></div></div>
+      <div class="grid3"><label class="row small"><input type="checkbox" name="bOn" ${s.birthday.enabled ? 'checked' : ''}> Birthday reward</label><div class="field"><label class="label">Amount ($)</label><input name="bAmt" inputmode="decimal" value="${money(s.birthday.amount)}"></div><div class="field"><label class="label">Valid (days)</label><input name="bDays" inputmode="numeric" value="${s.birthday.validDays}"></div></div>
+      <div class="grid2"><label class="row small"><input type="checkbox" name="stOn" ${s.stamps.enabled ? 'checked' : ''}> Stamp cards (free glass / bottle)</label><div class="field"><label class="label">Stamps for a free drink</label><input name="stGoal" inputmode="numeric" value="${s.stamps.goal}"></div></div></div>
+    <div class="panel stack"><h3>Cashback rules</h3>
+      <div class="grid2"><div class="field"><label class="label">Cashback expires after (months)</label><input name="expM" inputmode="numeric" value="${s.expiry.months}"></div><div class="field"><label class="label">Warn members (days before)</label><input name="expW" inputmode="numeric" value="${s.expiry.warnDays}"></div></div>
+      <div class="grid2"><div class="field"><label class="label">Minimum redemption ($)</label><input name="rMin" inputmode="decimal" value="${money(s.redemption.minCents)}"></div><div class="field"><label class="label">Max % of an invoice payable with cashback</label><input name="rMax" inputmode="numeric" value="${s.redemption.maxPercentOfInvoice}"></div></div>
+      <label class="row small"><input type="checkbox" name="rEx" ${s.redemption.allowOnExcluded ? 'checked' : ''}> Cashback can also pay for non-eligible items (gift cards etc.)</label>
+      <label class="row small"><input type="checkbox" name="stack" ${s.campaigns.allowStacking ? 'checked' : ''}> Allow campaigns marked "can combine" to stack</label></div>
+    <div class="panel stack"><h3>Purchase categories</h3><div id="cats" class="stack" style="gap:8px">${s.categories.map((c, i) => `<div class="row"><input name="c${i}" value="${esc(c.name)}"><label class="row small" style="flex:none"><input type="checkbox" name="c${i}e" ${c.eligible ? 'checked' : ''}> Earns cashback</label></div>`).join('')}</div>
+      <button type="button" class="btn btn-light btn-sm" id="addCat" style="align-self:flex-start">Add category</button>
+      <div class="field"><label class="label">Excluded products (note shown to staff and in the terms)</label><textarea name="excl" rows="2">${esc(s.excludedProducts)}</textarea></div></div>
+    <div class="panel stack"><h3>Notifications sent to members</h3><div class="chk">${Object.entries({ earned: 'Cashback earned', redeemed: 'Cashback redeemed', upgrade: 'Membership upgraded', welcome: 'Welcome reward', birthday: 'Birthday reward', expiry: 'Cashback expiring', reversal: 'Refunds & corrections' }).map(([k, l]) => `<label><input type="checkbox" name="n_${k}" ${s.notifications[k] ? 'checked' : ''}>${l}</label>`).join('')}</div><p class="small muted">Campaign announcements only go to members who accepted news & offers.</p></div>
+    <div class="panel stack"><h3>General</h3>
+      <div class="grid3"><div class="field"><label class="label">Currency code</label><input name="cur" value="${esc(s.currency.code)}"></div><div class="field"><label class="label">Symbol</label><input name="sym" value="${esc(s.currency.symbol)}"></div><div class="field"><label class="label">Time zone</label><input name="tz" value="${esc(s.timezone)}"></div></div>
+      <div class="grid2"><div class="field"><label class="label">"Close to next level" within ($)</label><input name="appr" inputmode="decimal" value="${money(s.approachingWithinCents)}"></div><div class="field"><label class="label">"Not visited recently" after (days)</label><input name="inact" inputmode="numeric" value="${s.inactiveDays}"></div></div>
+      <div class="field"><label class="label">Extra terms & conditions (added under the standard terms)</label><textarea name="terms" rows="4">${esc(s.terms)}</textarea></div></div>
+    <div class="panel stack"><h3>Connections</h3><div class="small">Apple Wallet: <b>${d.wallet.apple ? 'connected' : 'not set up'}</b> · Google Wallet: <b>${d.wallet.google ? 'connected' : 'not set up'}</b></div><p class="small muted">These are configured with Netlify environment variables — see the setup guide.</p></div>
+    <div id="sErr" class="error hidden"></div>
+    <div class="row" style="position:sticky;bottom:12px"><button class="btn btn-green grow" id="sSave" type="submit">Save settings</button></div>
+  </form>
+  <div class="panel stack" style="max-width:760px;margin-top:18px"><h3>Maintenance</h3><div class="row wrap-row"><button class="btn btn-light btn-sm" id="mDaily">Run daily check now (expiry, birthdays)</button><button class="btn btn-light btn-sm" id="mRebuild">Rebuild reports from ledgers</button></div></div>`);
+  let catN = s.categories.length;
+  on('addCat', 'onclick', () => { $('cats').insertAdjacentHTML('beforeend', `<div class="row"><input name="c${catN}" placeholder="Category name"><label class="row small" style="flex:none"><input type="checkbox" name="c${catN}e" checked> Earns cashback</label></div>`); catN++; });
+  $('sf').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData($('sf')).entries()); const ck = (n) => $('sf').querySelector(`[name="${n}"]`)?.checked;
+    const c = (v) => Math.round(parseFloat(toMoney(v) || 0) * 100);
+    const next = {
+      tiers: s.tiers.map((t, i) => ({ key: t.key, name: f[`t${i}name`], rate: parseFloat(toMoney(f[`t${i}rate`])), min: i === 0 ? 0 : c(f[`t${i}min`]) })),
+      welcome: { enabled: ck('wOn'), amount: c(f.wAmt) }, birthday: { enabled: ck('bOn'), amount: c(f.bAmt), validDays: +f.bDays }, stamps: { enabled: ck('stOn'), goal: +f.stGoal },
+      expiry: { months: +f.expM, warnDays: +f.expW }, redemption: { minCents: c(f.rMin), maxPercentOfInvoice: +f.rMax, allowOnExcluded: ck('rEx') }, campaigns: { allowStacking: ck('stack') },
+      categories: Array.from({ length: catN }, (_, i) => ({ name: (f['c' + i] || '').trim(), eligible: ck('c' + i + 'e') })).filter((x) => x.name),
+      excludedProducts: f.excl, notifications: Object.fromEntries(Object.keys(s.notifications).map((k) => [k, ck('n_' + k)])),
+      currency: { code: f.cur, symbol: f.sym }, timezone: f.tz, approachingWithinCents: c(f.appr), inactiveDays: +f.inact, terms: f.terms,
+    };
+    try { await api('/owner/settings', { settings: next }); SET = await (await fetch('/api/public/settings')).json(); toast('Settings saved'); $('sErr').classList.add('hidden'); }
+    catch (ex) { $('sErr').textContent = ex.message; $('sErr').classList.remove('hidden'); }
+  };
+  on('mDaily', 'onclick', async () => { try { const r = await api('/owner/run-daily', {}); toast(`Checked ${r.members} members`); } catch (e) { toast(e.message); } });
+  on('mRebuild', 'onclick', async () => { try { const r = await api('/owner/rebuild', {}); toast(`Rebuilt from ${r.members} members`); } catch (e) { toast(e.message); } });
+};
+
+// ============ START ============
+drawPin();
+if (TOKEN) start().catch(() => lock()); else lock();
+</script>
+</body>
+</html>
