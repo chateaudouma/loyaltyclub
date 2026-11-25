@@ -432,7 +432,7 @@ export async function handle(req, store, env = {}) {
 
     if (path === '/manifest' && method === 'GET') {
       const m = q.get('m') || '', t = q.get('t') || '';
-      const start = /^CD\d+$/.test(m) && /^[\w-]{10,40}$/.test(t) ? `/card?m=${m}&t=${t}` : '/join';
+      const start = /^CD\d+$/.test(m) && /^[\w-]{10,40}$/.test(t) ? `/card?m=${m}&t=${t}` : '/card'; // /card opens the saved card, or offers join / sign in
       return new Response(JSON.stringify({
         name: 'Château Douma', short_name: 'Château Douma', description: 'Château Douma Loyalty Club', start_url: start, scope: '/', display: 'standalone',
         background_color: '#F6F1E7', theme_color: '#F6F1E7',

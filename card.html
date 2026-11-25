@@ -361,7 +361,7 @@ function bind() {
     try { const d = await api('/me/profile', { newPin: a1 }); D.member = d.member; $('np1').value = ''; $('np2').value = ''; msg('PIN saved.', true); }
     catch (e) { msg(e.message); }
   };
-  const fg = $('forget'); if (fg) fg.onclick = () => { localStorage.removeItem('douma_card'); location.href = '/join'; };
+  const fg = $('forget'); if (fg) fg.onclick = () => { localStorage.removeItem('douma_card'); location.href = '/join?stay=1'; };
 }
 
 // ---------- data ----------
