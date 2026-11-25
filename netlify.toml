@@ -3,7 +3,7 @@
 # The build step puts the two server functions where Netlify expects them,
 # and copies only the public files into "site", which is what goes online.
 [build]
-  command = "mkdir -p netlify/functions && cp api.mjs daily.mjs netlify/functions/ && rm -rf site && mkdir site && cp *.html *.css *.png *.webmanifest jsQR.js qrcode.js sw.js terms.js site/"
+  command = "mkdir -p netlify/functions && cp api.mjs daily.mjs netlify/functions/ && rm -rf site && mkdir site && cp *.html *.css *.png *.webmanifest jsQR.js qrcode.js sw.js terms.js site/ && date +%s > site/version.txt"
   publish = "site"
   functions = "netlify/functions"
 
@@ -39,6 +39,11 @@
   from = "/m/*"
   to = "/m.html"
   status = 200
+
+[[headers]]
+  for = "/version.txt"
+  [headers.values]
+    Cache-Control = "no-store"
 
 [[headers]]
   for = "/sw.js"

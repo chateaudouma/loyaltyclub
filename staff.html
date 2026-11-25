@@ -102,7 +102,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-let TOKEN = sessionStorage.getItem('douma_tok') || localStorage.getItem('douma_staff_tok') || '';
+let TOKEN = localStorage.getItem('douma_staff_tok') || sessionStorage.getItem('douma_tok') || '';
 let ME = null, SET = null, CURRENT = null, VIEW = null;
 const SYM = () => SET?.currency?.symbol || '$';
 const M = (c) => doumaMoney(c || 0, SYM());
@@ -140,7 +140,7 @@ async function login() {
     const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pin: typed }) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error);
     TOKEN = d.token;
-    if (d.role === 'owner') sessionStorage.setItem('douma_tok', TOKEN); else localStorage.setItem('douma_staff_tok', TOKEN);
+    localStorage.setItem('douma_staff_tok', TOKEN); // stays signed in on this device (30 days) until Lock is tapped
     await start();
   } catch (e) { $('pinErr').textContent = e.message; }
   typed = ''; drawPin();
@@ -693,6 +693,19 @@ VIEWS.settings = async () => {
 // ============ START ============
 drawPin();
 if (TOKEN) start().catch(() => lock()); else lock();
+
+// ---------- auto-update: reload when a new version has been published ----------
+let APP_VERSION = null;
+async function checkForUpdate() {
+  try {
+    const v = (await (await fetch('/version.txt', { cache: 'no-store' })).text()).trim();
+    if (!/^\d+$/.test(v)) return;
+    if (!APP_VERSION) APP_VERSION = v;
+    else if (v !== APP_VERSION && !document.querySelector('dialog[open]')) location.reload();
+  } catch (_) {}
+}
+checkForUpdate();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
 </script>
 </body>
 </html>

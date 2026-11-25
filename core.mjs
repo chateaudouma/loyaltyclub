@@ -165,7 +165,7 @@ async function rateGate(ctx, bucket, limit, windowMin) {
 const BASE_STAFF = { scan: true, purchase: true, redeem: true, refund: false, history: false };
 async function staffList(ctx) { return (await ctx.store.getJSON('config/staff'))?.data || []; }
 async function signToken(ctx, payload) {
-  const body = Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 12 * 3600e3 })).toString('base64url');
+  const body = Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 30 * 864e5 })).toString('base64url'); // stays signed in for 30 days
   const sig = crypto.createHmac('sha256', await secret(ctx)).update(body).digest('base64url');
   return `${body}.${sig}`;
 }
