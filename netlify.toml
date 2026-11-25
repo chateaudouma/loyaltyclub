@@ -7,6 +7,11 @@
   publish = "site"
   functions = "netlify/functions"
 
+# Netlify scans for leaked passwords. Short PIN numbers can appear by coincidence inside
+# code libraries (node_modules), so those library files are skipped. Our own files are still scanned.
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "node_modules/**"
+
 [functions]
   node_bundler = "esbuild"
 
