@@ -97,6 +97,13 @@
   </div>
 </div>
 
+<dialog id="pushAsk"><div class="stack center" style="padding:24px 22px;align-items:center;gap:12px;max-width:420px">
+  <div style="width:60px;height:60px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7A5C25" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></div>
+  <h2 id="paTitle">Know when someone joins</h2>
+  <p id="paText" class="muted" style="font-size:15px;line-height:1.5">Get a notification on this device every time a new member joins the club.</p>
+  <button class="btn btn-green full" id="paYes">Turn on notifications</button>
+  <button class="link" id="paNo" style="color:var(--muted)">Not now</button>
+</div></dialog>
 <dialog id="dlg"><form method="dialog" id="dlgForm" class="stack" style="padding:20px;gap:14px"></form></dialog>
 
 <script>
@@ -161,6 +168,55 @@ async function start() {
   $('navSide').innerHTML = btns; $('navTop').innerHTML = nav.length > 1 ? btns : '';
   document.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => go(b.dataset.nav));
   go(ME.role === 'owner' ? 'dashboard' : 'scan');
+  setTimeout(askStaffPush, 1500);
+  watchJoins();
+}
+
+// ---------- notifications for staff: new member joined ----------
+function b64ToBytes(b) { const p = '='.repeat((4 - b.length % 4) % 4); const x = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(x, (c) => c.charCodeAt(0)); }
+async function subscribeStaff(ask) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return false;
+  const reg = await navigator.serviceWorker.register('/sw.js').catch(() => null); if (!reg) return false;
+  if (Notification.permission === 'default' && ask) await Notification.requestPermission();
+  if (Notification.permission !== 'granted') return false;
+  try {
+    const { key } = await api('/staff/push-key');
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key) });
+    await api('/staff/subscribe', { subscription: sub.toJSON() });
+    return true;
+  } catch (e) { return false; }
+}
+function askStaffPush() {
+  const canPush = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+  const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (canPush && Notification.permission === 'granted') { subscribeStaff(false); return; }
+  if (canPush && Notification.permission === 'denied') return;
+  if (Date.now() < (+localStorage.getItem('douma_staff_push_snooze') || 0) || document.querySelector('dialog[open]')) return;
+  if (!canPush) {
+    if (!(iOS && !standalone)) return;
+    $('paText').textContent = 'On iPhone, open this staff app from your Home Screen (Share \u2192 Add to Home Screen) to get a notification when someone joins.';
+    $('paYes').textContent = 'Got it';
+    $('paYes').onclick = () => { localStorage.setItem('douma_staff_push_snooze', Date.now() + 7 * 864e5); $('pushAsk').close(); };
+  } else {
+    $('paYes').onclick = async () => { $('pushAsk').close(); if (await subscribeStaff(true)) toast('Notifications on — you\u2019ll know when someone joins'); };
+  }
+  $('paNo').onclick = () => { localStorage.setItem('douma_staff_push_snooze', Date.now() + 3 * 864e5); $('pushAsk').close(); };
+  $('pushAsk').showModal();
+}
+// while the app is open: show an alert as soon as a new member joins
+let joinsSeen = null, joinTimer = null;
+function watchJoins() {
+  clearInterval(joinTimer);
+  const check = async () => {
+    if (!TOKEN || document.visibilityState !== 'visible') return;
+    try {
+      const t = await api('/staff/today');
+      if (joinsSeen !== null && t.joins > joinsSeen) toast(t.joins - joinsSeen === 1 ? 'A new member just joined' : `${t.joins - joinsSeen} new members just joined`);
+      joinsSeen = t.joins;
+    } catch (_) {}
+  };
+  check(); joinTimer = setInterval(check, 20000);
 }
 let PREV = 'scan';
 function go(v, arg) {

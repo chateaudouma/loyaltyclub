@@ -5,14 +5,15 @@ self.addEventListener('push', (event) => {
   let data = { title: 'Château Douma', body: '' };
   try { data = event.data.json(); } catch (_) { if (event.data) data.body = event.data.text(); }
   event.waitUntil(self.registration.showNotification(data.title || 'Château Douma', {
-    body: data.body || '', icon: '/icon-192.png', badge: '/icon-192.png', data: { url: '/card' },
+    body: data.body || '', icon: '/icon-192.png', badge: '/icon-192.png', data: { url: data.url || '/card' },
   }));
 });
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/card';
   event.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const c of all) if (new URL(c.url).pathname.startsWith('/card')) { c.focus(); c.postMessage('refresh'); return; }
-    await self.clients.openWindow('/card');
+    for (const c of all) if (new URL(c.url).pathname.startsWith(url)) { c.focus(); c.postMessage('refresh'); return; }
+    await self.clients.openWindow(url);
   })());
 });

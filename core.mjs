@@ -132,6 +132,20 @@ async function pushTo(ctx, ids, payload) {
   }));
   return sent;
 }
+// Phone notifications for staff devices (e.g. "New member joined")
+async function pushStaff(ctx, payload) {
+  const rec = await ctx.store.getJSON('staffsubs');
+  if (!rec?.data?.length) return 0;
+  const keys = await vapid(ctx);
+  webpush.setVapidDetails(ctx.env.VAPID_SUBJECT || 'mailto:hello@chateaudouma.com', keys.publicKey, keys.privateKey);
+  const dead = []; let sent = 0;
+  await Promise.all(rec.data.map(async (sub) => {
+    try { await webpush.sendNotification(sub, JSON.stringify(payload), { TTL: 43200 }); sent++; }
+    catch (e) { if (e.statusCode === 404 || e.statusCode === 410) dead.push(sub.endpoint); }
+  }));
+  if (dead.length) await update(ctx.store, 'staffsubs', (l) => (l || []).filter((x) => !dead.includes(x.endpoint)));
+  return sent;
+}
 async function pushNotes(ctx, m, notes) {
   for (const n of notes) if (n.essential || m.prefs.marketing) await pushTo(ctx, [m.id], { title: n.title, body: n.body, tier: n.tier || null });
 }
@@ -355,6 +369,7 @@ export async function handle(req, store, env = {}) {
         await logEvents(ctx, id, events);
         await indexMember(ctx, m);
         await audit(ctx, null, 'member.join', id, { name });
+        await Promise.race([pushStaff(ctx, { title: 'New member joined', body: `${name} · #${id}`, url: '/staff' }).catch(() => 0), new Promise((r) => setTimeout(r, 5000))]);
         return json({ id, token: m.token });
       } catch (e) {
         for (const k of claims) await store.del(k).catch(() => {});
@@ -522,6 +537,13 @@ export async function handle(req, store, env = {}) {
       const by = await session(ctx, isOwnerPath ? 'owner' : null);
       const s = await settings(ctx);
       if (path === '/auth/me') return json(by);
+      if (path === '/staff/push-key' && method === 'GET') return json({ key: (await vapid(ctx)).publicKey });
+      if (path === '/staff/subscribe' && method === 'POST') {
+        const bb = await body(req); const sub = bb.subscription;
+        need(sub?.endpoint && /^https:\/\//.test(sub.endpoint) && sub.keys?.p256dh && sub.keys?.auth, 'Bad subscription.');
+        await update(store, 'staffsubs', (l) => { l = (l || []).filter((x) => x.endpoint !== sub.endpoint); l.push({ endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }, by: by.name, at: ctx.now }); return l.slice(-60); }, { create: true });
+        return json({ ok: true });
+      }
       const b = method === 'POST' ? await body(req) : {};
 
       if (path === '/staff/find' && method === 'GET') {
