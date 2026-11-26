@@ -24,6 +24,7 @@
     document.head.appendChild(l);
   })();
 </script>
+<script>window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); window.__installEvt = e; });</script>
 <script src="/qrcode.js"></script>
 <script src="/terms.js"></script>
 <style>
@@ -65,6 +66,9 @@
   dialog.sheet{margin:auto auto 0;width:100%;max-width:480px;max-height:88vh;border-radius:24px 24px 0 0;padding:0;background:var(--paper);animation:sheetup .35s cubic-bezier(.2,.8,.2,1)}
   @keyframes sheetup{from{transform:translateY(100%)}}
   @media (prefers-reduced-motion:reduce){dialog.sheet{animation:none}}
+  .istep{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .istep .n{width:30px;height:30px;border-radius:50%;background:var(--green);color:var(--ivory);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
+  .istep .ic{width:40px;height:40px;border-radius:10px;background:var(--ivory);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none}
   .missed{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
   .switch{position:relative;width:50px;height:30px;flex:none}
   .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
@@ -146,6 +150,15 @@
   </div>
   <div id="missedList" class="stack" style="gap:8px;margin-top:14px"></div>
   <div class="row" style="margin-top:16px"><button class="btn btn-ghost grow" id="missedClose">Close</button><button class="btn btn-green" id="missedAll" style="flex:1.4">See all messages</button></div>
+</div></dialog>
+<dialog id="installGuide" class="sheet" aria-labelledby="igTitle"><div style="padding:10px 18px calc(22px + env(safe-area-inset-bottom))">
+  <div style="width:40px;height:4px;border-radius:99px;background:var(--line2);margin:0 auto 14px"></div>
+  <div class="row" style="gap:12px">
+    <img src="/apple-touch-icon.png" alt="" style="width:54px;height:54px;border-radius:13px;box-shadow:0 2px 8px rgba(0,0,0,.12);flex:none">
+    <div><h2 id="igTitle" style="font-size:23px">Add to your Home Screen</h2><div id="igSub" class="small muted">Open your card in one tap, like an app.</div></div>
+  </div>
+  <div id="igBody" class="stack" style="gap:8px;margin-top:16px"></div>
+  <div class="row" style="margin-top:16px"><button class="btn btn-ghost grow" id="igNo">Not now</button><button class="btn btn-green" id="igYes" style="flex:1.4">Got it</button></div>
 </div></dialog>
 <dialog id="notifAsk"><div class="stack center" style="padding:26px 22px;align-items:center;gap:12px">
   <div style="width:64px;height:64px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center">
@@ -330,7 +343,7 @@ function visitRow(st) {
 }
 const fmtPhone = (p) => p && p.startsWith('961') ? `+961 ${p.slice(3, 5)} ${p.slice(5, 8)} ${p.slice(8)}`.trim() : '+' + esc(p);
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-function installHint() { return standalone ? '' : `<p class="small muted center">Tip: tap Share → “Add to Home Screen” to keep your card one tap away.</p>`; }
+function installHint() { return ''; }
 
 function show(v) {
   view = v;
@@ -383,7 +396,7 @@ async function load(first) {
     if (prev && D.member.available > prev.available) toast(`+${M(D.member.available - prev.available)} cashback added`);
     window.__sig = sig;
     celebrate();
-    if (first) { enablePush(false); setTimeout(() => showMissed(askNotifications), 700); }
+    if (first) { enablePush(false); setTimeout(() => showMissed(() => showInstallGuide(askNotifications)), 700); }
   } catch (e) { /* offline: keep showing the last card */ }
 }
 function celebrate() {
@@ -435,6 +448,46 @@ const fwhen = (iso) => { const d = new Date(iso), now = new Date(); const day = 
   if (day(d) === day(new Date(Date.now() - 864e5))) return 'Yesterday';
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: tz() }); };
 
+// ---------- guide to put the card on the Home Screen (iPhone / Android) ----------
+const SHARE_ICON = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F6FEB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+const PLUS_ICON = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1C1A17" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg>';
+const DOTS_ICON = '<svg width="22" height="22" viewBox="0 0 24 24" fill="#1C1A17" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
+const step = (n, icon, html) => `<div class="istep"><span class="n">${n}</span><span class="ic">${icon}</span><span style="font-size:15px;line-height:1.4">${html}</span></div>`;
+function showInstallGuide(after) {
+  if (standalone || $('upgrade').open || $('missed').open) return after();
+  if (Date.now() < (+localStorage.getItem('douma_install_snooze') || 0)) return after();
+  const ua = navigator.userAgent;
+  const iOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /android/i.test(ua);
+  const inApp = /instagram|fban|fbav|fb_iab|line\/|whatsapp|snapchat|tiktok|crios|fxios|edgios/i.test(ua);
+  if (!iOS && !android) return after(); // computers: no guide
+  let yes = () => { $('installGuide').close(); };
+  if (iOS && inApp) {
+    $('igSub').textContent = 'First open this page in Safari.';
+    $('igBody').innerHTML = step(1, DOTS_ICON, 'Tap the <b>•••</b> or <b>share</b> menu of this app') + step(2, SHARE_ICON, 'Choose <b>Open in Safari</b> (or copy the link and paste it in Safari)') + step(3, PLUS_ICON, 'In Safari, tap <b>Share</b> then <b>Add to Home Screen</b>');
+    $('igYes').textContent = 'Copy link';
+    yes = async () => { try { await navigator.clipboard.writeText(location.origin + '/card'); toast('Link copied — paste it in Safari'); } catch (_) { toast(location.origin + '/card'); } };
+  } else if (iOS) {
+    $('igSub').textContent = 'Open your card in one tap, like an app.';
+    $('igBody').innerHTML = step(1, SHARE_ICON, 'Tap the <b>Share</b> button at the bottom of Safari') + step(2, PLUS_ICON, 'Scroll down and tap <b>Add to Home Screen</b>') + step(3, '<img src="/apple-touch-icon.png" alt="" style="width:26px;height:26px;border-radius:6px">', 'Tap <b>Add</b>, then open <b>Château Douma</b> from your Home Screen');
+    $('igYes').textContent = 'Got it';
+  } else if (window.__installEvt) {
+    $('igSub').textContent = 'Install the app in one tap.';
+    $('igBody').innerHTML = step(1, '<img src="/icon-192.png" alt="" style="width:26px;height:26px;border-radius:6px">', 'Tap <b>Install app</b> below, then <b>Install</b>');
+    $('igYes').textContent = 'Install app';
+    yes = async () => { const e = window.__installEvt; window.__installEvt = null; $('installGuide').close(); e.prompt(); try { const r = await e.userChoice; if (r.outcome === 'accepted') toast('Château Douma is on your Home Screen'); } catch (_) {} };
+  } else {
+    $('igSub').textContent = 'Open your card in one tap, like an app.';
+    $('igBody').innerHTML = step(1, DOTS_ICON, 'Tap the <b>⋮</b> menu at the top right of Chrome') + step(2, PLUS_ICON, 'Tap <b>Add to Home screen</b> or <b>Install app</b>') + step(3, '<img src="/icon-192.png" alt="" style="width:26px;height:26px;border-radius:6px">', 'Tap <b>Add</b>, then open <b>Château Douma</b> from your Home screen');
+    $('igYes').textContent = 'Got it';
+  }
+  $('igYes').onclick = yes;
+  $('igNo').onclick = () => { localStorage.setItem('douma_install_snooze', Date.now() + 3 * 864e5); $('installGuide').close(); };
+  $('installGuide').onclose = () => setTimeout(after, 400);
+  $('installGuide').showModal();
+}
+window.addEventListener('appinstalled', () => { try { $('installGuide').close(); } catch (_) {} });
+
 // ---------- ask for notifications as soon as the card opens ----------
 function askNotifications() {
   const snooze = +localStorage.getItem('douma_notif_snooze') || 0;
@@ -442,7 +495,7 @@ function askNotifications() {
   const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const canPush = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
   if (canPush && Notification.permission !== 'default') return; // already answered
-  if (!canPush && !(iOS && !standalone)) return;               // browser can't do notifications at all
+  if (!canPush) return; // e.g. iPhone in Safari: the Home Screen guide covers it
   if (!canPush) {
     // iPhone in Safari: notifications only work from the Home Screen app
     $('naTitle').textContent = 'Get notifications';
